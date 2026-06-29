@@ -1,0 +1,277 @@
+Advanced JUnit Testing Exercises
+Exercise 1: Parameterized Tests
+Scenario:
+You want to test a method that checks if a number is even. Instead of writing multiple test cases, you will use parameterized tests to run the same test with different inputs.
+Steps:
+Create a new Java class `EvenChecker` with a method `isEven(int number)`.
+Write a parameterized test class `EvenCheckerTest` that tests the `isEven` method with different inputs.
+Use JUnit's `@ParameterizedTest` and `@ValueSource` annotations.
+Exercise 1: Parameterized Tests in JUnit 5
+Aim
+To use Parameterized Tests in JUnit 5 to test the isEven() method with multiple inputs without writing separate test cases.
+Prerequisite: Add JUnit 5 Dependencies
+If using Maven, add the following dependencies to pom.xml:
+<dependencies>    <dependency>        <groupId>org.junit.jupiter</groupId>        <artifactId>junit-jupiter-api</artifactId>        <version>5.10.2</version>        <scope>test</scope>    </dependency>    <dependency>        <groupId>org.junit.jupiter</groupId>        <artifactId>junit-jupiter-engine</artifactId>        <version>5.10.2</version>        <scope>test</scope>    </dependency>    <dependency>        <groupId>org.junit.jupiter</groupId>        <artifactId>junit-jupiter-params</artifactId>        <version>5.10.2</version>        <scope>test</scope>    </dependency></dependencies>
+Step 1: Create the EvenChecker Class
+Create a class named EvenChecker.java.
+package com.example;public class EvenChecker {    public boolean isEven(int number) {        return number % 2 == 0;    }}
+Step 2: Create the Parameterized Test Class
+Create a JUnit Test Class named EvenCheckerTest.java.
+package com.example;import static org.junit.jupiter.api.Assertions.assertTrue;import org.junit.jupiter.params.ParameterizedTest;import org.junit.jupiter.params.provider.ValueSource;public class EvenCheckerTest {    private EvenChecker evenChecker = new EvenChecker();    @ParameterizedTest    @ValueSource(ints = {2, 4, 6, 8, 10, 100})    void testEvenNumbers(int number) {        assertTrue(evenChecker.isEven(number));    }}
+Understanding the Annotations
+@ParameterizedTest
+@ParameterizedTest
+Indicates that the test method will run multiple times with different input values.
+@ValueSource
+@ValueSource(ints = {2, 4, 6, 8, 10, 100})
+Supplies test data to the parameterized test.
+JUnit executes:
+testEvenNumbers(2)testEvenNumbers(4)testEvenNumbers(6)testEvenNumbers(8)testEvenNumbers(10)testEvenNumbers(100)
+Step 3: Testing Odd Numbers
+You can create another parameterized test for odd numbers.
+package com.example;import static org.junit.jupiter.api.Assertions.assertFalse;import static org.junit.jupiter.api.Assertions.assertTrue;import org.junit.jupiter.params.ParameterizedTest;import org.junit.jupiter.params.provider.ValueSource;public class EvenCheckerTest {    private EvenChecker evenChecker = new EvenChecker();    @ParameterizedTest    @ValueSource(ints = {2, 4, 6, 8, 10})    void testEvenNumbers(int number) {        assertTrue(evenChecker.isEven(number));    }    @ParameterizedTest    @ValueSource(ints = {1, 3, 5, 7, 9})    void testOddNumbers(int number) {        assertFalse(evenChecker.isEven(number));    }}
+Running the Test in Eclipse
+Right-click EvenCheckerTest.java 
+Select: 
+Run As → JUnit Test
+Expected Output
+testEvenNumbers(int) ✔testOddNumbers(int) ✔
+JUnit Summary:
+Tests run: 10Failures: 0Errors: 0Skipped: 0
+Project Structure
+JUnitParameterizedDemo│├── src/main/java│   └── com.example│       └── EvenChecker.java│├── src/test/java│   └── com.example│       └── EvenCheckerTest.java│└── JUnit 5 Libraries
+Result
+Successfully implemented Parameterized Testing using:
+@ParameterizedTest 
+@ValueSource 
+assertTrue() 
+assertFalse()
+Exercise 2: Test Suites and Categories
+Scenario:
+You want to group related tests into a test suite and categorize them. Steps:
+Create a new test suite class `AllTests`.
+Add multiple test classes to the suite.
+Use JUnit's `@Suite` and `@SelectClasses` annotations.
+Aim
+To group multiple test classes into a single test suite using JUnit 5.
+Step 1: Create the Classes to Test
+Calculator.java
+package com.example;public class Calculator {    public int add(int a, int b) {        return a + b;    }    public int subtract(int a, int b) {        return a - b;    }}
+EvenChecker.java
+package com.example;public class EvenChecker {    public boolean isEven(int number) {        return number % 2 == 0;    }}
+Step 2: Create Test Classes
+CalculatorTest.java
+package com.example;import static org.junit.jupiter.api.Assertions.assertEquals;import org.junit.jupiter.api.Test;public class CalculatorTest {    Calculator calculator = new Calculator();    @Test    void testAdd() {        assertEquals(30, calculator.add(10, 20));    }    @Test    void testSubtract() {        assertEquals(15, calculator.subtract(20, 5));    }}
+EvenCheckerTest.java
+package com.example;import static org.junit.jupiter.api.Assertions.assertTrue;import org.junit.jupiter.params.ParameterizedTest;import org.junit.jupiter.params.provider.ValueSource;public class EvenCheckerTest {    EvenChecker checker = new EvenChecker();    @ParameterizedTest    @ValueSource(ints = {2, 4, 6, 8, 10})    void testEvenNumbers(int number) {        assertTrue(checker.isEven(number));    }}
+Step 3: Create the Test Suite
+Right-click src → New → Class 
+Class Name: AllTests 
+Click Finish 
+AllTests.java
+package com.example;import org.junit.platform.suite.api.SelectClasses;import org.junit.platform.suite.api.Suite;@Suite@SelectClasses({    CalculatorTest.class,    EvenCheckerTest.class})public class AllTests {}
+Step 4: Required Library
+If Eclipse shows errors on:
+import org.junit.platform.suite.api.Suite;import org.junit.platform.suite.api.SelectClasses;
+add the JUnit Platform Suite dependency.
+For Maven:
+<dependency>    <groupId>org.junit.platform</groupId>    <artifactId>junit-platform-suite</artifactId>    <version>1.10.2</version>    <scope>test</scope></dependency>
+If using Eclipse's built-in JUnit 5 library, this is usually included automatically.
+Step 5: Run the Suite
+Right-click AllTests.java 
+Select: 
+Run As → JUnit Test
+Expected Output
+CalculatorTest  ✔ testAdd()  ✔ testSubtract()EvenCheckerTest  ✔ testEvenNumbers()
+JUnit Summary:
+Tests run: 7Failures: 0Errors: 0
+(2 Calculator tests + 5 parameterized EvenChecker tests)
+Categories (JUnit 5 Tags)
+JUnit 5 uses @Tag instead of Categories.
+CalculatorTest.java
+import org.junit.jupiter.api.Tag;import org.junit.jupiter.api.Test;@Tag("Calculator")public class CalculatorTest {    @Test    void testAdd() {    }}
+EvenCheckerTest.java
+import org.junit.jupiter.api.Tag;@Tag("Validation")public class EvenCheckerTest {}
+This allows tests to be grouped logically and filtered during execution.
+Result
+Successfully created a JUnit 5 Test Suite using:
+@Suite 
+@SelectClasses 
+@Tag (Categories)
+Exercise 3: Test Execution Order
+Scenario:
+You want to control the order in which tests are executed. Steps:
+Create a test class `OrderedTests`.
+Use JUnit's `@TestMethodOrder` and `@Order` annotations.
+Aim
+To control the order in which test methods are executed using JUnit 5 annotations:
+@TestMethodOrder 
+@Order 
+Theory
+By default, JUnit does not guarantee the order of test execution.
+JUnit 5 allows you to specify the execution order using:
+@TestMethodOrder(OrderAnnotation.class)
+and
+@Order(n)
+where n is the execution priority.
+Step 1: Create the Test Class
+Right-click src → New → Class 
+Name: OrderedTests 
+Click Finish 
+Step 2: Write the Test Code
+OrderedTests.java
+package com.example;import org.junit.jupiter.api.Order;import org.junit.jupiter.api.Test;import org.junit.jupiter.api.TestMethodOrder;import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;@TestMethodOrder(OrderAnnotation.class)public class OrderedTests {    @Test    @Order(1)    void testFirst() {        System.out.println("Executing Test 1");    }    @Test    @Order(2)    void testSecond() {        System.out.println("Executing Test 2");    }    @Test    @Order(3)    void testThird() {        System.out.println("Executing Test 3");    }}
+Explanation
+Specify Ordering Strategy
+@TestMethodOrder(OrderAnnotation.class)
+Tells JUnit to execute tests according to their @Order values.
+First Test
+@Order(1)@Testvoid testFirst() {}
+Runs first.
+Second Test
+@Order(2)@Testvoid testSecond() {}
+Runs second.
+Third Test
+@Order(3)@Testvoid testThird() {}
+Runs third.
+Step 3: Run the Test
+Right-click OrderedTests.java 
+Select: 
+Run As → JUnit Test
+Expected Console Output
+Executing Test 1Executing Test 2Executing Test 3
+Expected JUnit Result
+Tests run: 3Failures: 0Errors: 0Skipped: 0
+A green bar appears in the JUnit view.
+Alternative Example
+package com.example;import org.junit.jupiter.api.*;@TestMethodOrder(MethodOrderer.OrderAnnotation.class)public class OrderedTests {    @Test    @Order(3)    void login() {        System.out.println("Login Test");    }    @Test    @Order(1)    void openApplication() {        System.out.println("Open Application Test");    }    @Test    @Order(2)    void enterCredentials() {        System.out.println("Enter Credentials Test");    }}
+Output
+Open Application TestEnter Credentials TestLogin Test
+because the tests are executed according to their @Order values.
+Project Structure
+JUnitDemo│├── src│   └── com.example│       └── OrderedTests.java│└── JUnit 5 Library
+Result
+Successfully controlled the execution order of JUnit 5 test methods using:
+@TestMethodOrder(OrderAnnotation.class) 
+@Order()
+Exercise 4: Exception Testing
+Scenario:
+You want to test that a method throws the expected exception. Steps:
+Create a class `ExceptionThrower` with a method `throwException`.
+Write a test class `ExceptionThrowerTest` that tests the method for the expected exception.
+Aim
+To test whether a method throws the expected exception using JUnit 5.
+Theory
+Exception testing verifies that a method throws a specific exception under certain conditions.
+JUnit 5 provides:
+assertThrows()
+to test exceptions.
+Step 1: Create the ExceptionThrower Class
+Right-click src → New → Class 
+Name: ExceptionThrower 
+Click Finish 
+ExceptionThrower.java
+package com.example;public class ExceptionThrower {    public void throwException() {        throw new IllegalArgumentException("This is an exception");    }}
+Step 2: Create the Test Class
+Right-click src → New → JUnit Test Case 
+Select JUnit 5 
+Name: ExceptionThrowerTest 
+Click Finish 
+ExceptionThrowerTest.java
+package com.example;import static org.junit.jupiter.api.Assertions.assertThrows;import org.junit.jupiter.api.Test;public class ExceptionThrowerTest {    ExceptionThrower exceptionThrower = new ExceptionThrower();    @Test    void testThrowException() {        assertThrows(            IllegalArgumentException.class,            () -> exceptionThrower.throwException()        );    }}
+Explanation
+Method Under Test
+throw new IllegalArgumentException("This is an exception");
+The method intentionally throws an IllegalArgumentException.
+Test Case
+assertThrows(    IllegalArgumentException.class,    () -> exceptionThrower.throwException());
+Checks that:
+The method is executed. 
+An IllegalArgumentException is thrown. 
+The test passes if the exception occurs. 
+The test fails if no exception or a different exception is thrown. 
+Step 3: Run the Test
+Right-click ExceptionThrowerTest.java 
+Select: 
+Run As → JUnit Test
+Expected Output
+JUnit View:
+testThrowException() ✔
+Summary:
+Tests run: 1Failures: 0Errors: 0Skipped: 0
+A green bar appears indicating the test passed.
+Optional: Verify Exception Message
+package com.example;import static org.junit.jupiter.api.Assertions.*;import org.junit.jupiter.api.Test;public class ExceptionThrowerTest {    @Test    void testThrowException() {        ExceptionThrower exceptionThrower = new ExceptionThrower();        IllegalArgumentException exception =                assertThrows(                        IllegalArgumentException.class,                        () -> exceptionThrower.throwException());        assertEquals("This is an exception",                     exception.getMessage());    }}
+Expected Result
+Tests run: 1Failures: 0Errors: 0
+Project Structure
+JUnitDemo│├── src│   └── com.example│       ├── ExceptionThrower.java│       └── ExceptionThrowerTest.java│└── JUnit 5 Library
+Result
+Successfully implemented Exception Testing in JUnit 5 using:
+assertThrows() 
+IllegalArgumentException
+Exercise 5: Timeout and Performance Testing
+Scenario:
+You want to ensure that a method completes within a specified time limit. Steps:
+Create a class `PerformanceTester` with a method `performTask`.
+Write a test class `PerformanceTesterTest` that tests the method for timeout.
+Aim
+To verify that a method completes execution within a specified time limit using JUnit 5's assertTimeout().
+Theory
+Performance testing ensures that a method executes within an acceptable time.
+JUnit 5 provides:
+assertTimeout()
+to check whether code finishes within a given duration.
+Step 1: Create the PerformanceTester Class
+Right-click src → New → Class 
+Name: PerformanceTester 
+Click Finish 
+PerformanceTester.java
+package com.example;public class PerformanceTester {    public void performTask() throws InterruptedException {        // Simulate a task taking 1 second        Thread.sleep(1000);        System.out.println("Task Completed");    }}
+Step 2: Create the Test Class
+Right-click src → New → JUnit Test Case 
+Select JUnit 5 
+Name: PerformanceTesterTest 
+Click Finish 
+PerformanceTesterTest.java
+package com.example;import static org.junit.jupiter.api.Assertions.assertTimeout;import java.time.Duration;import org.junit.jupiter.api.Test;public class PerformanceTesterTest {    PerformanceTester tester = new PerformanceTester();    @Test    void testPerformTaskTimeout() {        assertTimeout(            Duration.ofSeconds(2),            () -> tester.performTask()        );    }}
+Explanation
+Method Under Test
+Thread.sleep(1000);
+The task takes approximately 1 second to complete.
+Timeout Test
+assertTimeout(    Duration.ofSeconds(2),    () -> tester.performTask());
+This means:
+Expected completion time: 2 seconds 
+Actual completion time: 1 second 
+Result: Test Passes 
+Step 3: Run the Test
+Right-click PerformanceTesterTest.java 
+Select: 
+Run As → JUnit Test
+Expected Output
+Console:
+Task Completed
+JUnit Result:
+Tests run: 1Failures: 0Errors: 0Skipped: 0
+A green bar appears indicating the test passed.
+Example of a Failing Timeout Test
+Modify performTask():
+public void performTask() throws InterruptedException {    Thread.sleep(3000);    System.out.println("Task Completed");}
+Keep the same test:
+assertTimeout(    Duration.ofSeconds(2),    () -> tester.performTask());
+Result
+Expected execution time: less than 2 secondsActual execution time: 3 seconds
+JUnit Output:
+Tests run: 1Failures: 1Errors: 0
+A red bar appears because the method exceeded the allowed time.
+Alternative: Immediate Timeout Failure
+JUnit 5 also provides:
+assertTimeoutPreemptively(    Duration.ofSeconds(2),    () -> tester.performTask());
+This stops the task immediately once the timeout is reached.
+Project Structure
+JUnitDemo│├── src│   └── com.example│       ├── PerformanceTester.java│       └── PerformanceTesterTest.java│└── JUnit 5 Library
+Result
+Successfully implemented Timeout and Performance Testing using:
+assertTimeout() 
+Duration.ofSeconds()

@@ -1,0 +1,3335 @@
+Mockito Hands-On Exercises
+Exercise 1: Mocking and Stubbing
+Scenario:
+You need to test a service that depends on an external API. Use Mockito to mock the external API and stub its methods.
+Steps:
+Create a mock object for the external API.
+Stub the methods to return predefined values.
+Write a test case that uses the mock object.
+Solution Code:
+import static org.mockito.Mockito.*; import org.junit.jupiter.api.Test; import org.mockito.Mockito;
+public class MyServiceTest { @Test
+public void testExternalApi() {
+ExternalApi mockApi = Mockito.mock(ExternalApi.class); when(mockApi.getData()).thenReturn("Mock Data"); MyService service = new MyService(mockApi);
+String result = service.fetchData(); assertEquals("Mock Data", result);
+}
+}
+Step 1: Create a New Java Project in Eclipse
+Open Eclipse IDE
+Go to File → New → Java Project
+Name it MockitoExercise
+Click Finish
+Step 2: Add Mockito Dependencies
+Since the exercise uses Eclipse, you need to add the Mockito JAR files:
+Option A: Using Maven (Recommended)
+Right-click project → Configure → Convert to Maven Project
+Add this to pom.xml:
+xml
+<dependencies>
+    <!-- JUnit 5 -->
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>5.10.0</version>
+        <scope>test</scope>
+    </dependency>
+    
+    <!-- Mockito -->
+    <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>5.11.0</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+Option B: Manual JAR Download
+Download these JAR files:
+mockito-core-5.11.0.jar
+byte-buddy-1.14.10.jar (dependency)
+junit-jupiter-api-5.10.0.jar
+Right-click project → Build Path → Configure Build Path
+Click Add External JARs and select the downloaded files
+Step 3: Create the Classes
+Create ExternalApi.java (The interface/class to mock)
+Right-click src → New → Class
+java
+package com.example;
+public interface ExternalApi {
+    String getData();
+    int getStatusCode();
+    void updateData(String data);
+}
+Create MyService.java (The class we're testing)
+Right-click src → New → Class
+java
+package com.example;
+public class MyService {
+    private ExternalApi externalApi;
+    
+    // Constructor injection
+    public MyService(ExternalApi externalApi) {
+        this.externalApi = externalApi;
+    }
+    
+    public String fetchData() {
+        return externalApi.getData();
+    }
+    
+    public int checkStatus() {
+        return externalApi.getStatusCode();
+    }
+    
+    public void saveData(String data) {
+        externalApi.updateData(data);
+    }
+}
+Step 4: Create the Test Class
+Important: Test classes go in src/test/java folder (Maven structure)
+Right-click project → New → Source Folder
+Name it src/test/java
+Right-click this folder → New → Package → com.example
+Right-click the package → New → JUnit Test Case
+java
+package com.example;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+public class MyServiceTest {
+    
+    private ExternalApi mockApi;
+    private MyService service;
+    
+    @BeforeEach
+    void setUp() {
+        // 1. CREATE MOCK: Create a mock object for the external API
+        mockApi = mock(ExternalApi.class);
+        
+        // Create the service with the mock
+        service = new MyService(mockApi);
+    }
+    
+    @Test
+    public void testFetchData() {
+        // 2. STUB: Define what the mock should return when called
+        when(mockApi.getData()).thenReturn("Mock Data");
+        
+        // 3. EXECUTE: Call the service method
+        String result = service.fetchData();
+        
+        // 4. VERIFY: Check the result
+        assertEquals("Mock Data", result);
+        
+        // Optional: Verify the method was called
+        verify(mockApi).getData();
+    }
+    
+    @Test
+    public void testFetchDataMultipleStubs() {
+        // Stub with different return values
+        when(mockApi.getData())
+            .thenReturn("First Call")
+            .thenReturn("Second Call");
+        
+        assertEquals("First Call", service.fetchData());
+        assertEquals("Second Call", service.fetchData());
+    }
+    
+    @Test
+    public void testCheckStatus() {
+        // Stub another method
+        when(mockApi.getStatusCode()).thenReturn(200);
+        
+        int status = service.checkStatus();
+        
+        assertEquals(200, status);
+        verify(mockApi).getStatusCode();
+    }
+}
+Step 5: Run the Test in Eclipse
+Right-click on MyServiceTest.java in the Package Explorer
+Select Run As → JUnit Test
+Look at the JUnit tab - you should see green bars ✅
+🔍 Breaking Down the Solution Code
+Let me explain the solution code line-by-line:
+java
+import static org.mockito.Mockito.*;
+This imports all static Mockito methods like mock(), when(), verify(), etc.
+java
+import org.junit.jupiter.api.Test;
+Imports the @Test annotation from JUnit 5.
+java
+public class MyServiceTest {
+    @Test
+    public void testExternalApi() {
+        // 1. CREATE MOCK
+        ExternalApi mockApi = Mockito.mock(ExternalApi.class);
+        // Creates a fake implementation of ExternalApi
+        // All methods return null/0/false by default
+        
+        // 2. STUB METHOD
+        when(mockApi.getData()).thenReturn("Mock Data");
+        // "When getData() is called, return 'Mock Data'"
+        // This overrides the default null return
+        
+        // 3. INJECT MOCK
+        MyService service = new MyService(mockApi);
+        // Service uses the mock, not the real implementation
+        
+        // 4. EXECUTE
+        String result = service.fetchData();
+        // fetchData() calls mockApi.getData()
+        // Returns "Mock Data" (not null!)
+        
+        // 5. ASSERT
+        assertEquals("Mock Data", result);
+        // Verify the result is what we expected
+    }
+}
+📊 Visual Flow of How Mocking Works
+text
+┌─────────────────────────────────────────────────────────┐
+│                   TEST EXECUTION                        │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  1. mock(ExternalApi.class)                             │
+│     ┌─────────────────────┐                            │
+│     │  Mock ExternalApi   │                            │
+│     │  - getData() → null │ (default)                 │
+│     └─────────────────────┘                            │
+│              │                                          │
+│  2. when(...).thenReturn("Mock Data")                   │
+│     ┌─────────────────────┐                            │
+│     │  Mock ExternalApi   │                            │
+│     │  - getData() → "Mock Data" │ (stubbed)          │
+│     └─────────────────────┘                            │
+│              │                                          │
+│  3. service = new MyService(mockApi)                    │
+│     ┌─────────────────────┐                            │
+│     │  MyService          │                            │
+│     │  - externalApi ─────┼──→ (mock)                 │
+│     └─────────────────────┘                            │
+│              │                                          │
+│  4. service.fetchData()                                 │
+│     ├──→ mockApi.getData()                             │
+│     └──→ returns "Mock Data"                           │
+│              │                                          │
+│  5. assertEquals("Mock Data", result) ✓                │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+🎯 Common Eclipse Shortcuts for Testing
+Action
+Shortcut
+Run test
+Alt + Shift + X, T
+Run last test
+Ctrl + F11
+Create JUnit test
+Ctrl + Shift + T → New JUnit
+Auto-import
+Ctrl + Shift + O
+⚠️ Troubleshooting Eclipse Issues
+Problem: "Mockito cannot be resolved"
+Fix: Right-click project → Build Path → Configure Build Path → Add JARs
+Problem: "JUnit not found"
+Fix: Right-click project → Build Path → Add Library → JUnit → JUnit 5
+Problem: "when() not recognized"
+Fix: Add import static org.mockito.Mockito.*; at top
+Problem: Tests not showing in JUnit view
+Fix: Make sure test class is public and methods are @Test
+🏗️ Complete Project Structure
+text
+MockitoExercise/
+├── src/
+│   └── main/
+│       └── java/
+│           └── com/
+│               └── example/
+│                   ├── ExternalApi.java  (interface)
+│                   └── MyService.java     (class under test)
+└── src/
+    └── test/
+        └── java/
+            └── com/
+                └── example/
+                    └── MyServiceTest.java (test class)
+🎓 Key Takeaways
+Mock = Fake object that mimics real behavior
+Stub = Define what the mock returns (when().thenReturn())
+Verify = Check if methods were called (verify())
+Inject = Pass the mock to the service under test
+Assert = Verify the result matches expectations
+Exercise 2: Verifying Interactions
+Scenario:
+You need to ensure that a method is called with specific arguments.
+Steps:
+Create a mock object.
+Call the method with specific arguments.
+Verify the interaction.
+Solution Code:
+import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.Test; import org.mockito.Mockito;
+public class MyServiceTest { @Test
+public void testVerifyInteraction() {
+ExternalApi mockApi = Mockito.mock(ExternalApi.class); MyService service = new MyService(mockApi); service.fetchData();
+verify(mockApi).getData();
+}
+}
+What's Different About Exercise 2?
+In Exercise 1, we focused on stubbing (making the mock return values).In Exercise 2, we focus on verification (checking if methods were called correctly).
+🔧 Step 1: Setup (Same as Exercise 1)
+Use the same project structure. If you haven't created it yet, follow the setup from Exercise 1.
+Update Existing Classes
+Make sure your ExternalApi.java has more methods for this exercise:
+java
+package com.example;
+public interface ExternalApi {
+    String getData();
+    int getStatusCode();
+    void updateData(String data);
+    
+    // Additional methods for verification examples
+    void saveUser(String username, String password);
+    String fetchById(int id);
+    void deleteRecord(long recordId);
+}
+Update MyService.java
+java
+package com.example;
+public class MyService {
+    private ExternalApi externalApi;
+    
+    public MyService(ExternalApi externalApi) {
+        this.externalApi = externalApi;
+    }
+    
+    public String fetchData() {
+        return externalApi.getData();
+    }
+    
+    public int checkStatus() {
+        return externalApi.getStatusCode();
+    }
+    
+    public void saveData(String data) {
+        externalApi.updateData(data);
+    }
+    
+    // New methods for verification examples
+    public void registerUser(String username, String password) {
+        externalApi.saveUser(username, password);
+    }
+    
+    public String getUserName(int id) {
+        return externalApi.fetchById(id);
+    }
+    
+    public void removeRecord(long id) {
+        externalApi.deleteRecord(id);
+    }
+}
+📝 Step 2: Create the Test Class with Verification
+Create a new test class or add to existing MyServiceTest.java:
+java
+package com.example;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+public class MyServiceTest {
+    
+    private ExternalApi mockApi;
+    private MyService service;
+    
+    @BeforeEach
+    void setUp() {
+        // Create the mock
+        mockApi = mock(ExternalApi.class);
+        service = new MyService(mockApi);
+    }
+    
+    // ============================================
+    // BASIC VERIFICATION
+    // ============================================
+    
+    @Test
+    public void testVerifyInteraction() {
+        // 1. Call the method
+        service.fetchData();
+        
+        // 2. Verify the interaction
+        verify(mockApi).getData();
+        // This passes because getData() was called exactly once
+    }
+    
+    // ============================================
+    // VERIFY WITH SPECIFIC ARGUMENTS
+    // ============================================
+    
+    @Test
+    public void testVerifyWithArguments() {
+        // Call with specific arguments
+        service.registerUser("john_doe", "password123");
+        
+        // Verify the method was called with EXACT arguments
+        verify(mockApi).saveUser("john_doe", "password123");
+        // This will fail if arguments don't match exactly!
+    }
+    
+    // ============================================
+    // VERIFY WITH ARGUMENT MATCHERS
+    // ============================================
+    
+    @Test
+    public void testVerifyWithMatchers() {
+        service.registerUser("alice", "secret456");
+        
+        // Verify with matchers (more flexible)
+        verify(mockApi).saveUser(anyString(), anyString());
+        // anyString() matches ANY string value
+        
+        // More specific matchers
+        verify(mockApi).saveUser(startsWith("alice"), contains("456"));
+        // Matches: first arg starts with "alice", second contains "456"
+    }
+    
+    // ============================================
+    // VERIFY CALL COUNT
+    // ============================================
+    
+    @Test
+    public void testVerifyCallCount() {
+        // Call the method multiple times
+        service.fetchData();
+        service.fetchData();
+        service.fetchData();
+        
+        // Verify called exactly 3 times
+        verify(mockApi, times(3)).getData();
+        
+        // Other count verifications:
+        // verify(mockApi, times(1)).getData();  // exactly once
+        // verify(mockApi, atLeast(2)).getData(); // 2 or more times
+        // verify(mockApi, atMost(4)).getData();  // 4 or fewer times
+        // verify(mockApi, never()).getData();    // 0 times (never called)
+    }
+    
+    // ============================================
+    // VERIFY WITH DIFFERENT ARGUMENTS
+    // ============================================
+    
+    @Test
+    public void testVerifyMultipleCallsWithDifferentArgs() {
+        // Call with different arguments
+        service.registerUser("user1", "pass1");
+        service.registerUser("user2", "pass2");
+        
+        // Verify first call
+        verify(mockApi).saveUser("user1", "pass1");
+        
+        // Verify second call
+        verify(mockApi).saveUser("user2", "pass2");
+    }
+    
+    // ============================================
+    // VERIFY NO INTERACTIONS
+    // ============================================
+    
+    @Test
+    public void testVerifyNoInteractions() {
+        // Don't call any method
+        
+        // Verify NO interactions with the mock
+        verifyNoInteractions(mockApi);
+        // This passes because we never called any method
+        
+        // Or verify no more interactions after specific ones
+        service.fetchData();
+        verify(mockApi).getData();
+        verifyNoMoreInteractions(mockApi);
+        // This verifies ONLY getData() was called and nothing else
+    }
+    
+    // ============================================
+    // VERIFY ORDER OF CALLS
+    // ============================================
+    
+    @Test
+    public void testVerifyOrder() {
+        // Call methods in a specific order
+        service.fetchData();
+        service.checkStatus();
+        service.saveData("test");
+        
+        // Create an in-order verifier
+        InOrder inOrder = inOrder(mockApi);
+        
+        // Verify calls happened in this exact order
+        inOrder.verify(mockApi).getData();
+        inOrder.verify(mockApi).getStatusCode();
+        inOrder.verify(mockApi).updateData("test");
+        
+        // If the order was different, this test would fail
+    }
+}
+🔍 Deep Dive: Understanding Verification
+How Verification Works
+text
+┌─────────────────────────────────────────────────────────────┐
+│                    VERIFICATION FLOW                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. Mock Object Records Everything                         │
+│     ┌──────────────────────────────────┐                   │
+│     │  Mock ExternalApi                │                   │
+│     │  ┌────────────────────────────┐ │                   │
+│     │  │ Interaction History:       │ │                   │
+│     │  │ 1. getData() called        │ │                   │
+│     │  │ 2. getStatusCode() called  │ │                   │
+│     │  │ 3. updateData("test")      │ │                   │
+│     │  └────────────────────────────┘ │                   │
+│     └──────────────────────────────────┘                   │
+│                      │                                      │
+│  2. verify(mockApi).getData()                              │
+│     ├── Checks history for getData()                      │
+│     ├── Finds it at position 1                            │
+│     └── ✓ Test passes                                     │
+│                                                             │
+│  3. verify(mockApi, times(2)).getData()                   │
+│     ├── Counts getData() calls                           │
+│     ├── Finds only 1 call                                │
+│     └── ✗ Test fails (expected 2, found 1)              │
+│                                                             │
+│  4. InOrder verification                                   │
+│     ├── Checks getData() → found at pos 1                │
+│     ├── Checks getStatusCode() → found at pos 2          │
+│     └── ✓ Order matches!                                  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+🎯 All Verification Methods Explained
+1. Basic Verification
+java
+verify(mockApi).getData();
+Checks method was called exactly once
+Fails if called 0 times or 2+ times
+2. Times Verification
+java
+verify(mockApi, times(3)).getData();     // Called exactly 3 times
+verify(mockApi, atLeast(2)).getData();   // Called 2 or more
+verify(mockApi, atMost(5)).getData();    // Called 5 or fewer
+verify(mockApi, never()).getData();      // Called 0 times
+verify(mockApi, only()).getData();       // Called only once, no other calls
+3. Argument Matchers
+java
+// Basic matchers
+anyString()    // Any String value
+anyInt()       // Any int
+anyLong()      // Any long
+any()          // Any object
+eq("exact")    // Exact value (use with matchers)
+// String matchers
+contains("text")    // Contains substring
+startsWith("prefix")
+endsWith("suffix")
+matches("regex")
+// Collection matchers
+anyList()
+anySet()
+anyMap()
+anyCollection()
+// Custom matcher
+argThat(argument -> argument.length() > 5)
+4. Combined Examples
+java
+@Test
+public void testCombinedVerification() {
+    service.fetchData();      // Calls getData()
+    service.checkStatus();     // Calls getStatusCode()
+    service.fetchData();      // Calls getData() again
+    service.fetchData();      // Calls getData() again
+    
+    // Verify specific count
+    verify(mockApi, times(3)).getData();
+    verify(mockApi, times(1)).getStatusCode();
+    
+    // Verify with matchers
+    verify(mockApi, atLeast(2)).getData();
+    
+    // Verify order
+    InOrder inOrder = inOrder(mockApi);
+    inOrder.verify(mockApi).getData();
+    inOrder.verify(mockApi).getStatusCode();
+    inOrder.verify(mockApi, times(2)).getData();
+}
+⚠️ Common Verification Errors
+Error 1: Wrong Arguments
+java
+// ❌ This will fail
+service.registerUser("john", "pass");
+verify(mockApi).saveUser("jane", "pass");
+// Error: Argument mismatch!
+Error 2: Wrong Call Count
+java
+// ❌ This will fail
+service.fetchData(); // only 1 call
+verify(mockApi, times(2)).getData();
+// Error: Wanted 2 times, but was 1 time
+Error 3: Unexpected Calls
+java
+// ❌ This will fail
+service.fetchData();
+service.checkStatus(); // Extra call
+verify(mockApi).getData();
+verifyNoMoreInteractions(mockApi);
+// Error: Unwanted interaction: getStatusCode()
+🏗️ Complete Project Structure for Exercise 2
+text
+MockitoExercise/
+├── src/main/java/com/example/
+│   ├── ExternalApi.java          (interface)
+│   └── MyService.java             (class under test)
+└── src/test/java/com/example/
+    └── MyServiceTest.java         (test with all verifications)
+📊 Comparison: Exercise 1 vs Exercise 2
+Aspect
+Exercise 1 (Stubbing)
+Exercise 2 (Verification)
+Purpose
+Define what mock returns
+Check what was called
+When
+Before calling method
+After calling method
+Syntax
+when(mock.method()).thenReturn(x)
+verify(mock).method()
+Focus
+Behavior definition
+Interaction validation
+Fails if
+Stubbed value doesn't match expectation
+Method not called as expected
+🧪 Running Tests in Eclipse
+Run all tests:
+Right-click MyServiceTest.java
+Run As → JUnit Test
+Run individual test:
+Click on a specific test method
+Right-click → Run As → JUnit Test
+View results:
+Green bar = All tests pass ✅
+Red bar = Some tests fail ❌
+Click on failed test to see error message
+🎓 Key Takeaways for Exercise 2
+Verification checks IF and HOW methods were called
+verify() must come AFTER the method call
+Matchers make verification flexible
+Call counts ensure proper usage
+InOrder validates sequence
+verifyNoInteractions() ensures no unexpected calls
+🔥 Bonus: Complete Test with All Verification Types
+java
+@Test
+public void completeVerificationExample() {
+    // 1. Execute multiple operations
+    service.registerUser("john", "pass123");
+    service.fetchData();
+    service.fetchData();
+    service.checkStatus();
+    service.removeRecord(100L);
+    
+    // 2. Verify exact arguments
+    verify(mockApi).saveUser("john", "pass123");
+    
+    // 3. Verify call counts
+    verify(mockApi, times(2)).getData();
+    verify(mockApi, times(1)).getStatusCode();
+    verify(mockApi, times(1)).deleteRecord(100L);
+    
+    // 4. Verify order
+    InOrder inOrder = inOrder(mockApi);
+    inOrder.verify(mockApi).saveUser("john", "pass123");
+    inOrder.verify(mockApi, times(2)).getData();
+    inOrder.verify(mockApi).getStatusCode();
+    inOrder.verify(mockApi).deleteRecord(100L);
+    
+    // 5. Verify no unexpected calls
+    verifyNoMoreInteractions(mockApi);
+}
+Exercise 3: Argument Matching
+Scenario:
+You need to verify that a method is called with specific arguments.
+Steps:
+Create a mock object.
+Call the method with specific arguments.
+Use argument matchers to verify the interaction.
+What Makes Exercise 3 Special?
+In Exercise 2, we verified methods were called with exact arguments.In Exercise 3, we learn to verify with flexible patterns using argument matchers.
+🔧 Step 1: Setup the Project
+ExternalApi.java (Expand with more methods)
+java
+package com.example;
+public interface ExternalApi {
+    // Existing methods
+    String getData();
+    int getStatusCode();
+    void updateData(String data);
+    void saveUser(String username, String password);
+    String fetchById(int id);
+    void deleteRecord(long recordId);
+    
+    // NEW methods for argument matching exercises
+    void processUser(User user);
+    void updateUser(int userId, String name, String email);
+    String findUser(String firstName, String lastName, int age);
+    void saveBatch(List<String> items);
+    void logEvent(String eventType, Map<String, Object> metadata);
+}
+// Supporting class
+class User {
+    private String name;
+    private int age;
+    
+    public User(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+    // getters and setters...
+}
+MyService.java (Updated with new methods)
+java
+package com.example;
+import java.util.List;
+import java.util.Map;
+public class MyService {
+    private ExternalApi externalApi;
+    
+    public MyService(ExternalApi externalApi) {
+        this.externalApi = externalApi;
+    }
+    
+    // Existing methods...
+    public String fetchData() {
+        return externalApi.getData();
+    }
+    
+    public void registerUser(String username, String password) {
+        externalApi.saveUser(username, password);
+    }
+    
+    // NEW methods for argument matching
+    public void handleUser(User user) {
+        externalApi.processUser(user);
+    }
+    
+    public void modifyUser(int id, String name, String email) {
+        externalApi.updateUser(id, name, email);
+    }
+    
+    public String searchPerson(String firstName, String lastName, int age) {
+        return externalApi.findUser(firstName, lastName, age);
+    }
+    
+    public void storeItems(List<String> items) {
+        externalApi.saveBatch(items);
+    }
+    
+    public void recordEvent(String event, Map<String, Object> metadata) {
+        externalApi.logEvent(event, metadata);
+    }
+}
+📝 Step 2: Test Class with Argument Matchers
+java
+package com.example;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
+import java.util.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+public class MyServiceTest {
+    
+    private ExternalApi mockApi;
+    private MyService service;
+    
+    @BeforeEach
+    void setUp() {
+        mockApi = mock(ExternalApi.class);
+        service = new MyService(mockApi);
+    }
+    
+    // ============================================
+    // BASIC ARGUMENT MATCHERS
+    // ============================================
+    
+    @Test
+    public void testBasicArgumentMatchers() {
+        // Call the method
+        service.registerUser("john_doe", "password123");
+        
+        // Verify with ANY matchers
+        verify(mockApi).saveUser(anyString(), anyString());
+        // anyString() - matches any String value
+        
+        // Verify with specific types
+        service.modifyUser(1, "John", "john@email.com");
+        verify(mockApi).updateUser(anyInt(), anyString(), anyString());
+    }
+    
+    // ============================================
+    // SPECIFIC STRING MATCHERS
+    // ============================================
+    
+    @Test
+    public void testStringMatchers() {
+        service.registerUser("alice_wonder", "secret123");
+        
+        // startsWith - matches strings that start with prefix
+        verify(mockApi).saveUser(startsWith("alice"), anyString());
+        
+        // endsWith - matches strings that end with suffix
+        verify(mockApi).saveUser(anyString(), endsWith("123"));
+        
+        // contains - matches strings that contain substring
+        verify(mockApi).saveUser(contains("_wonder"), anyString());
+        
+        // matches - regex pattern matching
+        verify(mockApi).saveUser(matches("^[a-z]+_[a-z]+$"), anyString());
+        // ^[a-z]+_[a-z]+$  matches: lowercase_underscore_lowercase
+    }
+    
+    // ============================================
+    // NUMBER MATCHERS
+    // ============================================
+    
+    @Test
+    public void testNumberMatchers() {
+        service.modifyUser(25, "Jane", "jane@email.com");
+        
+        // anyInt() - matches any int
+        verify(mockApi).updateUser(anyInt(), anyString(), anyString());
+        
+        // eq() - exact match when using matchers
+        verify(mockApi).updateUser(anyInt(), eq("Jane"), eq("jane@email.com"));
+        
+        // gt() - greater than
+        service.searchPerson("John", "Doe", 30);
+        verify(mockApi).findUser(anyString(), anyString(), gt(18));  // age > 18
+        
+        // lt() - less than
+        service.searchPerson("Mary", "Smith", 15);
+        verify(mockApi).findUser(anyString(), anyString(), lt(18));  // age < 18
+        
+        // geq() - greater than or equal
+        verify(mockApi).findUser(anyString(), anyString(), geq(18));
+        
+        // leq() - less than or equal
+        verify(mockApi).findUser(anyString(), anyString(), leq(18));
+        
+        // eq() - exact value
+        verify(mockApi).findUser(anyString(), anyString(), eq(25));
+    }
+    
+    // ============================================
+    // COLLECTION MATCHERS
+    // ============================================
+    
+    @Test
+    public void testCollectionMatchers() {
+        List<String> items = Arrays.asList("item1", "item2", "item3");
+        service.storeItems(items);
+        
+        // anyList() - matches any List
+        verify(mockApi).saveBatch(anyList());
+        
+        // anyListOf(Class) - matches List of specific type
+        verify(mockApi).saveBatch(anyListOf(String.class));
+        
+        // anyCollection() - matches any Collection
+        verify(mockApi).saveBatch(anyCollection());
+        
+        // Specific collection size matching
+        verify(mockApi).saveBatch(argThat(list -> ((List<?>) list).size() == 3));
+    }
+    
+    // ============================================
+    // MAP MATCHERS
+    // ============================================
+    
+    @Test
+    public void testMapMatchers() {
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("source", "web");
+        metadata.put("timestamp", System.currentTimeMillis());
+        
+        service.recordEvent("LOGIN", metadata);
+        
+        // anyMap() - matches any Map
+        verify(mockApi).logEvent(anyString(), anyMap());
+        
+        // anyMapOf(Class, Class) - matches Map with specific key/value types
+        verify(mockApi).logEvent(anyString(), anyMapOf(String.class, Object.class));
+        
+        // Match map with specific key
+        verify(mockApi).logEvent(anyString(), argThat(map -> 
+            ((Map<String, Object>) map).containsKey("source")
+        ));
+        
+        // Match map with specific value
+        verify(mockApi).logEvent(anyString(), argThat(map -> 
+            "web".equals(((Map<String, Object>) map).get("source"))
+        ));
+    }
+    
+    // ============================================
+    // CUSTOM OBJECT MATCHERS
+    // ============================================
+    
+    @Test
+    public void testCustomObjectMatchers() {
+        User user = new User("Alice", 25);
+        service.handleUser(user);
+        
+        // any() - matches any object
+        verify(mockApi).processUser(any(User.class));
+        
+        // eq() - exact object (requires proper equals implementation)
+        User expectedUser = new User("Alice", 25);
+        verify(mockApi).processUser(eq(expectedUser));
+        
+        // Custom matcher with argThat
+        verify(mockApi).processUser(argThat(u -> 
+            ((User) u).getName().startsWith("A") && ((User) u).getAge() > 20
+        ));
+        
+        // Custom matcher with lambda (more readable)
+        verify(mockApi).processUser(argThat(user1 -> 
+            user1.getName().length() > 3 && user1.getAge() >= 18
+        ));
+    }
+    
+    // ============================================
+    // COMBINING MATCHERS
+    // ============================================
+    
+    @Test
+    public void testCombiningMatchers() {
+        service.registerUser("john_doe", "pass123");
+        
+        // Combine multiple matchers
+        verify(mockApi).saveUser(
+            startsWith("john").and(contains("_doe")),
+            matches("^[a-zA-Z0-9]+$")
+        );
+        // First arg: starts with "john" AND contains "_doe"
+        // Second arg: only alphanumeric characters
+        
+        // Using OR condition
+        verify(mockApi).saveUser(
+            argThat(s -> s.startsWith("j") || s.startsWith("J")),
+            anyString()
+        );
+    }
+    
+    // ============================================
+    // STUBBING WITH ARGUMENT MATCHERS
+    // ============================================
+    
+    @Test
+    public void testStubbingWithMatchers() {
+        // Stub with matchers
+        when(mockApi.findUser(anyString(), anyString(), anyInt()))
+            .thenReturn("User found");
+        
+        // Call the method
+        String result = service.searchPerson("John", "Doe", 25);
+        
+        // Verify
+        assertEquals("User found", result);
+        verify(mockApi).findUser("John", "Doe", 25);
+        
+        // More specific stubbing
+        when(mockApi.findUser(eq("Admin"), anyString(), anyInt()))
+            .thenReturn("Admin found");
+        when(mockApi.findUser(anyString(), anyString(), eq(18)))
+            .thenReturn("Adult found");
+        
+        // Test different argument combinations
+        assertEquals("Admin found", service.searchPerson("Admin", "User", 30));
+        assertEquals("Adult found", service.searchPerson("Any", "Name", 18));
+    }
+    
+    // ============================================
+    // ARGUMENT MATCHERS WITH VOID METHODS
+    // ============================================
+    
+    @Test
+    public void testVoidMethodsWithMatchers() {
+        // Use doNothing() with matchers for void methods
+        doNothing().when(mockApi).saveUser(anyString(), anyString());
+        doNothing().when(mockApi).updateUser(anyInt(), anyString(), anyString());
+        
+        // Call methods
+        service.registerUser("test", "pass");
+        service.modifyUser(100, "Test", "test@email.com");
+        
+        // Verify
+        verify(mockApi).saveUser(anyString(), anyString());
+        verify(mockApi).updateUser(anyInt(), anyString(), anyString());
+    }
+    
+    // ============================================
+    // ARGUMENT MATCHERS WITH EXCEPTIONS
+    // ============================================
+    
+    @Test
+    public void testMatchersWithExceptions() {
+        // Stub to throw exception
+        when(mockApi.findUser(anyString(), anyString(), anyInt()))
+            .thenThrow(new RuntimeException("User not found"));
+        
+        // Verify exception is thrown
+        assertThrows(RuntimeException.class, () -> {
+            service.searchPerson("Invalid", "User", 99);
+        });
+        
+        // Verify method was called with specific arguments
+        verify(mockApi).findUser("Invalid", "User", 99);
+    }
+}
+🔍 Deep Dive: Understanding Argument Matchers
+The Complete Matcher Hierarchy
+text
+┌─────────────────────────────────────────────────────────────┐
+│                   ARGUMENT MATCHERS                         │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ANY MATCHERS                                              │
+│  ├── any()              - Any object                       │
+│  ├── any(Class)         - Any object of type               │
+│  ├── anyString()        - Any String                       │
+│  ├── anyInt()           - Any int                          │
+│  ├── anyLong()          - Any long                         │
+│  ├── anyDouble()        - Any double                       │
+│  ├── anyBoolean()       - Any boolean                      │
+│  ├── anyByte()          - Any byte                         │
+│  ├── anyChar()          - Any char                         │
+│  ├── anyFloat()         - Any float                        │
+│  └── anyShort()         - Any short                        │
+│                                                             │
+│  COLLECTION MATCHERS                                       │
+│  ├── anyList()          - Any List                         │
+│  ├── anyListOf(Class)   - Any List of type                 │
+│  ├── anySet()           - Any Set                          │
+│  ├── anySetOf(Class)    - Any Set of type                  │
+│  ├── anyMap()           - Any Map                          │
+│  ├── anyMapOf(K,V)      - Any Map of types                 │
+│  ├── anyCollection()    - Any Collection                   │
+│  └── anyIterable()      - Any Iterable                     │
+│                                                             │
+│  STRING MATCHERS                                           │
+│  ├── startsWith(String) - Starts with prefix               │
+│  ├── endsWith(String)   - Ends with suffix                 │
+│  ├── contains(String)   - Contains substring               │
+│  ├── matches(String)    - Matches regex                    │
+│  └── isEmpty()          - Empty string                     │
+│                                                             │
+│  NUMBER MATCHERS (for numeric comparisons)                 │
+│  ├── eq(value)          - Exactly equal                    │
+│  ├── gt(value)          - Greater than                     │
+│  ├── lt(value)          - Less than                        │
+│  ├── geq(value)         - Greater than or equal            │
+│  ├── leq(value)         - Less than or equal               │
+│  └── eq(value)          - Equal to                         │
+│                                                             │
+│  CUSTOM MATCHERS                                           │
+│  ├── argThat(Predicate) - Custom condition                 │
+│  ├── refEq(object)      - Reflection equality              │
+│  └── same(object)       - Same instance (==)               │
+│                                                             │
+│  SPECIAL MATCHERS                                          │
+│  ├── isNull()           - Null value                       │
+│  ├── notNull()          - Not null                         │
+│  ├── isA(Class)         - Instance of class                │
+│  └── nullable(Class)    - Null or specific type            │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+🎯 Real-World Use Cases
+1. User Registration Validation
+java
+@Test
+public void testUserRegistrationWithMatchers() {
+    // Stub with specific patterns
+    when(mockApi.saveUser(
+        matches("^[a-zA-Z0-9_]{3,20}$"),  // username: 3-20 chars, alphanumeric
+        matches("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$") // password: min 8 chars with number
+    )).thenReturn(true);
+    
+    // Test valid registration
+    service.registerUser("john_doe", "Password123");
+    verify(mockApi).saveUser(
+        matches("^[a-zA-Z0-9_]{3,20}$"),
+        matches("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$")
+    );
+}
+2. API Request Validation
+java
+@Test
+public void testAPIRequestWithMatchers() {
+    // Test different scenarios
+    service.modifyUser(1, "John", "john@example.com");
+    service.modifyUser(2, "Jane", "jane@example.com");
+    
+    // Verify email format
+    verify(mockApi, times(2)).updateUser(
+        anyInt(),
+        anyString(),
+        matches("^[A-Za-z0-9+_.-]+@(.+)$")  // Email pattern
+    );
+    
+    // Verify user IDs are positive
+    verify(mockApi).updateUser(
+        argThat(id -> (Integer) id > 0),
+        anyString(),
+        anyString()
+    );
+}
+3. Complex Object Validation
+java
+@Test
+public void testComplexObjectMatchers() {
+    User user = new User("Alice", 25);
+    service.handleUser(user);
+    
+    // Complex validation with argThat
+    verify(mockApi).processUser(argThat(u -> 
+        ((User) u).getName().length() >= 3 &&
+        ((User) u).getAge() >= 18 &&
+        ((User) u).getAge() <= 65
+    ));
+}
+⚠️ Common Pitfalls and Solutions
+Pitfall 1: Mixing Matchers and Exact Values
+java
+// ❌ WRONG - Can't mix matchers and exact values
+verify(mockApi).saveUser("john", anyString());  // ERROR!
+// ✅ CORRECT - Use eq() for exact values
+verify(mockApi).saveUser(eq("john"), anyString());
+// OR use all matchers
+verify(mockApi).saveUser(anyString(), anyString());
+Pitfall 2: Incorrect Type in Matchers
+java
+// ❌ WRONG - Type mismatch
+verify(mockApi).updateUser(anyInt(), anyString(), anyInt()); // ERROR!
+// ✅ CORRECT - Use correct types
+verify(mockApi).updateUser(anyInt(), anyString(), anyString());
+Pitfall 3: Null Values
+java
+// ❌ WRONG - anyString() doesn't match null
+verify(mockApi).saveUser(null, anyString()); // Won't match!
+// ✅ CORRECT - Use isNull() for null values
+verify(mockApi).saveUser(isNull(), anyString());
+// Or nullable() for null or String
+verify(mockApi).saveUser(nullable(String.class), anyString());
+📊 Comparison of All Exercises
+Feature
+Exercise 1
+Exercise 2
+Exercise 3
+Primary Focus
+Stubbing
+Verification
+Argument Matching
+Main Method
+when().thenReturn()
+verify()
+verify() + matchers
+Flexibility
+Low (exact returns)
+Medium (exact args)
+High (pattern matching)
+Use Case
+Define behavior
+Check calls
+Validate arguments
+Complexity
+Simple
+Moderate
+Advanced
+🧪 Running Tests in Eclipse
+Run all tests: Right-click MyServiceTest → Run As → JUnit Test
+See failures: Red bar shows which assertions failed
+Debug matcher failures: Hover over red test to see expected vs actual
+Example Failure Message:
+text
+Wanted but not invoked:
+externalApi.saveUser(
+    <any string>,
+    <any string>
+);
+Actually, there were zero interactions with this mock.
+🎓 Key Takeaways for Exercise 3
+Argument Matchers make verification flexible and powerful
+any*() methods match any value of a specific type
+String matchers (startsWith, contains, matches) validate text patterns
+Number matchers (gt, lt) validate numeric ranges
+argThat() allows custom validation logic
+Always use eq() when mixing exact values with matchers
+Void methods need doNothing().when() with matchers
+🚀 Bonus: Advanced Matcher Combinations
+java
+@Test
+public void advancedMatcherExamples() {
+    // 1. Combine multiple conditions
+    verify(mockApi).saveUser(
+        argThat(s -> s.length() >= 3 && s.length() <= 20),
+        argThat(s -> s.length() >= 8 && s.matches(".*\\d.*"))
+    );
+    
+    // 2. Custom user matcher
+    verify(mockApi).processUser(argThat(user -> 
+        user.getName().length() > 0 &&
+        user.getAge() >= 18 &&
+        user.getName().matches("[A-Z][a-z]+")
+    ));
+    
+    // 3. Collection validation
+    verify(mockApi).saveBatch(argThat(list -> 
+        ((List<String>) list).size() > 0 &&
+        ((List<String>) list).stream().allMatch(s -> s.startsWith("item"))
+    ));
+    
+    // 4. Map validation
+    verify(mockApi).logEvent(
+        eq("LOGIN"),
+        argThat(map ->
+            ((Map<String, Object>) map).containsKey("userId") &&
+            ((Map<String, Object>) map).containsKey("timestamp")
+        )
+    );
+}
+Exercise 4: Handling Void Methods
+Scenario:
+You need to test a void method that performs some action.
+Steps:
+Create a mock object.
+Stub the void method.
+Verify the interaction.
+Why Are Void Methods Special?
+Unlike methods that return values, void methods:
+Don't return anything (obviously!)
+Usually perform side effects (database updates, logging, API calls)
+Can't use when().thenReturn() directly
+Need special syntax for stubbing and verification
+🔧 Step 1: Setup the Project
+ExternalApi.java (Focus on void methods)
+java
+package com.example;
+import java.util.List;
+import java.util.Map;
+public interface ExternalApi {
+    // ============================================
+    // VOID METHODS - These return nothing!
+    // ============================================
+    
+    void updateData(String data);
+    void saveUser(String username, String password);
+    void deleteRecord(long recordId);
+    void processUser(User user);
+    void sendEmail(String to, String subject, String body);
+    void logEvent(String eventType, Map<String, Object> metadata);
+    void saveBatch(List<String> items);
+    void clearCache();
+    
+    // ============================================
+    // NON-VOID METHODS (for comparison)
+    // ============================================
+    
+    String getData();
+    int getStatusCode();
+    String findUser(String firstName, String lastName, int age);
+}
+class User {
+    private String name;
+    private int age;
+    
+    public User(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+    // getters and setters...
+}
+MyService.java (Service using void methods)
+java
+package com.example;
+import java.util.List;
+import java.util.Map;
+public class MyService {
+    private ExternalApi externalApi;
+    
+    public MyService(ExternalApi externalApi) {
+        this.externalApi = externalApi;
+    }
+    
+    // ============================================
+    // METHODS THAT CALL VOID METHODS
+    // ============================================
+    
+    public void saveData(String data) {
+        externalApi.updateData(data);
+    }
+    
+    public void registerUser(String username, String password) {
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("Username cannot be empty");
+        }
+        externalApi.saveUser(username, password);
+        externalApi.logEvent("USER_REGISTERED", Map.of("username", username));
+    }
+    
+    public void deleteUser(long userId) {
+        if (userId <= 0) {
+            throw new IllegalArgumentException("Invalid user ID");
+        }
+        externalApi.deleteRecord(userId);
+        externalApi.logEvent("USER_DELETED", Map.of("userId", userId));
+    }
+    
+    public void notifyUser(String email, String subject, String message) {
+        externalApi.sendEmail(email, subject, message);
+        externalApi.logEvent("EMAIL_SENT", Map.of("recipient", email));
+    }
+    
+    public void storeItems(List<String> items) {
+        if (items == null || items.isEmpty()) {
+            throw new IllegalArgumentException("Items cannot be null or empty");
+        }
+        externalApi.saveBatch(items);
+    }
+    
+    public void refreshCache() {
+        externalApi.clearCache();
+        externalApi.logEvent("CACHE_CLEARED", Map.of());
+    }
+}
+📝 Step 2: Test Class for Void Methods
+java
+package com.example;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
+import java.util.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+public class MyServiceTest {
+    
+    private ExternalApi mockApi;
+    private MyService service;
+    
+    @BeforeEach
+    void setUp() {
+        mockApi = mock(ExternalApi.class);
+        service = new MyService(mockApi);
+    }
+    
+    // ============================================
+    // BASIC VOID METHOD STUBBING
+    // ============================================
+    
+    @Test
+    public void testBasicVoidMethodStubbing() {
+        // STUBBING VOID METHODS: Use doNothing()
+        doNothing().when(mockApi).updateData(anyString());
+        
+        // Call the void method
+        service.saveData("test data");
+        
+        // Verify it was called
+        verify(mockApi).updateData("test data");
+    }
+    
+    // ============================================
+    // DO NOTHING (Default Behavior)
+    // ============================================
+    
+    @Test
+    public void testDoNothingDefault() {
+        // By default, void methods do NOTHING
+        // No need to stub unless you want explicit behavior
+        
+        service.saveData("test");
+        verify(mockApi).updateData("test");
+        // Passes! Mock does nothing by default
+    }
+    
+    // ============================================
+    // THROW EXCEPTION FROM VOID METHOD
+    // ============================================
+    
+    @Test
+    public void testVoidMethodThrowsException() {
+        // Stub void method to throw exception
+        doThrow(new RuntimeException("Database error"))
+            .when(mockApi).saveUser(anyString(), anyString());
+        
+        // Expect exception when calling service
+        assertThrows(RuntimeException.class, () -> {
+            service.registerUser("john", "pass123");
+        });
+        
+        // Verify the method was called (and threw exception)
+        verify(mockApi).saveUser("john", "pass123");
+    }
+    
+    // ============================================
+    // THROW SPECIFIC EXCEPTION TYPES
+    // ============================================
+    
+    @Test
+    public void testVoidMethodThrowsSpecificException() {
+        // Throw specific exception type
+        doThrow(new IllegalArgumentException("Invalid data"))
+            .when(mockApi).saveBatch(anyList());
+        
+        List<String> items = Arrays.asList("item1", "item2");
+        
+        assertThrows(IllegalArgumentException.class, () -> {
+            service.storeItems(items);
+        });
+    }
+    
+    // ============================================
+    // DO ANSWER - CUSTOM BEHAVIOR
+    // ============================================
+    
+    @Test
+    public void testVoidMethodWithDoAnswer() {
+        // Custom behavior using Answer
+        doAnswer(invocation -> {
+            // Get arguments
+            String username = invocation.getArgument(0);
+            String password = invocation.getArgument(1);
+            
+            // Custom logic
+            if (username.length() < 3) {
+                throw new IllegalArgumentException("Username too short");
+            }
+            if (password.length() < 8) {
+                throw new IllegalArgumentException("Password too short");
+            }
+            
+            // Simulate successful save
+            System.out.println("User saved: " + username);
+            return null; // Void methods return null
+        }).when(mockApi).saveUser(anyString(), anyString());
+        
+        // Test valid user
+        service.registerUser("john_doe", "password123");
+        verify(mockApi).saveUser("john_doe", "password123");
+        
+        // Test invalid user - should throw exception
+        assertThrows(IllegalArgumentException.class, () -> {
+            service.registerUser("ab", "password123");
+        });
+    }
+    
+    // ============================================
+    // DO ANSWER WITH ARGUMENT CAPTURING
+    // ============================================
+    
+    @Test
+    public void testVoidMethodWithArgumentCapturing() {
+        // Use Answer to modify arguments
+        doAnswer(invocation -> {
+            String data = invocation.getArgument(0);
+            // Transform the data before "saving"
+            String transformed = data.toUpperCase();
+            System.out.println("Saving: " + transformed);
+            return null;
+        }).when(mockApi).updateData(anyString());
+        
+        // Call the method
+        service.saveData("hello world");
+        
+        // Verify it was called with original argument
+        verify(mockApi).updateData("hello world");
+    }
+    
+    // ============================================
+    // VERIFYING VOID METHODS
+    // ============================================
+    
+    @Test
+    public void testVerifyVoidMethods() {
+        // Call multiple void methods
+        service.registerUser("alice", "secret123");
+        service.deleteUser(100L);
+        service.notifyUser("alice@email.com", "Welcome", "Hello Alice!");
+        
+        // Verify each void method was called
+        verify(mockApi).saveUser("alice", "secret123");
+        verify(mockApi).deleteRecord(100L);
+        verify(mockApi).sendEmail("alice@email.com", "Welcome", "Hello Alice!");
+        
+        // Verify with call counts
+        verify(mockApi, times(1)).saveUser(anyString(), anyString());
+        verify(mockApi, times(1)).deleteRecord(anyLong());
+        verify(mockApi, times(1)).sendEmail(anyString(), anyString(), anyString());
+    }
+    
+    // ============================================
+    // VERIFY ORDER OF VOID METHODS
+    // ============================================
+    
+    @Test
+    public void testVerifyOrderOfVoidMethods() {
+        // Call methods in specific order
+        service.registerUser("bob", "pass123");
+        service.deleteUser(200L);
+        service.refreshCache();
+        
+        // Verify order
+        InOrder inOrder = inOrder(mockApi);
+        inOrder.verify(mockApi).saveUser("bob", "pass123");
+        inOrder.verify(mockApi).deleteRecord(200L);
+        inOrder.verify(mockApi).clearCache();
+        inOrder.verify(mockApi).logEvent(anyString(), anyMap());
+        
+        // This would fail if order was different
+    }
+    
+    // ============================================
+    // TESTING BUSINESS LOGIC WITH VOID METHODS
+    // ============================================
+    
+    @Test
+    public void testBusinessLogicInVoidMethods() {
+        // Test successful registration
+        service.registerUser("john_doe", "password123");
+        verify(mockApi).saveUser("john_doe", "password123");
+        verify(mockApi).logEvent(eq("USER_REGISTERED"), anyMap());
+        
+        // Test null username throws exception
+        assertThrows(IllegalArgumentException.class, () -> {
+            service.registerUser(null, "password");
+        });
+        verify(mockApi, never()).saveUser(anyString(), anyString());
+        
+        // Test empty username throws exception
+        assertThrows(IllegalArgumentException.class, () -> {
+            service.registerUser("", "password");
+        });
+        verify(mockApi, never()).saveUser(anyString(), anyString());
+    }
+    
+    // ============================================
+    // TESTING VOID METHODS WITH EXCEPTIONS
+    // ============================================
+    
+    @Test
+    public void testVoidMethodWithExceptions() {
+        // Stub to throw exception
+        doThrow(new RuntimeException("Email service unavailable"))
+            .when(mockApi).sendEmail(anyString(), anyString(), anyString());
+        
+        // The service should propagate the exception
+        assertThrows(RuntimeException.class, () -> {
+            service.notifyUser("test@email.com", "Subject", "Body");
+        });
+        
+        // Verify the method was called
+        verify(mockApi).sendEmail("test@email.com", "Subject", "Body");
+    }
+    
+    // ============================================
+    // MULTIPLE VOID METHOD STUBS
+    // ============================================
+    
+    @Test
+    public void testMultipleVoidMethodStubs() {
+        // Stub different void methods
+        doNothing().when(mockApi).updateData(anyString());
+        doThrow(new RuntimeException("Delete failed"))
+            .when(mockApi).deleteRecord(anyLong());
+        doAnswer(invocation -> {
+            System.out.println("Sending email...");
+            return null;
+        }).when(mockApi).sendEmail(anyString(), anyString(), anyString());
+        
+        // Test each behavior
+        service.saveData("test"); // Should work
+        verify(mockApi).updateData("test");
+        
+        assertThrows(RuntimeException.class, () -> {
+            service.deleteUser(1L);
+        });
+        
+        service.notifyUser("test@email.com", "Subject", "Body");
+        verify(mockApi).sendEmail("test@email.com", "Subject", "Body");
+    }
+    
+    // ============================================
+    // VOID METHOD WITH ARGUMENT MATCHERS
+    // ============================================
+    
+    @Test
+    public void testVoidMethodWithArgumentMatchers() {
+        // Stub with specific argument patterns
+        doNothing().when(mockApi).saveUser(
+            startsWith("admin_"),
+            matches("^[a-zA-Z0-9]{8,}$")
+        );
+        
+        // Should work for admin users
+        service.registerUser("admin_john", "password123");
+        verify(mockApi).saveUser(eq("admin_john"), anyString());
+        
+        // Should throw for non-admin users
+        // Since we didn't stub this case, it will use default (do nothing)
+        service.registerUser("regular_user", "pass");
+        verify(mockApi).saveUser(eq("regular_user"), anyString());
+    }
+}
+🔍 Deep Dive: Void Method Stubbing
+Why doXxx().when() Instead of when().doXxx()?
+java
+// ❌ WRONG - This doesn't work with void methods!
+when(mockApi.saveUser("john", "pass")).thenReturn(something);
+// Compilation error! Void methods don't return anything
+// ✅ CORRECT - Use doXxx() pattern
+doNothing().when(mockApi).saveUser("john", "pass");
+doThrow(RuntimeException.class).when(mockApi).saveUser("john", "pass");
+Complete Void Method Stubbing Options
+text
+┌─────────────────────────────────────────────────────────────┐
+│              VOID METHOD STUBBING OPTIONS                  │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  1. doNothing()                                             │
+│     └── Default behavior, method does nothing              │
+│     └── Syntax: doNothing().when(mock).voidMethod()       │
+│                                                             │
+│  2. doThrow()                                               │
+│     ├── doThrow(RuntimeException.class)                    │
+│     ├── doThrow(new RuntimeException("msg"))               │
+│     └── doThrow(Exception1.class, Exception2.class)       │
+│                                                             │
+│  3. doAnswer()                                              │
+│     └── Custom behavior with Answer interface              │
+│     └── Access arguments, throw exceptions, side effects  │
+│                                                             │
+│  4. doCallRealMethod()                                      │
+│     └── Calls the real method on a spy                     │
+│                                                             │
+│  5. doNothing() + multiple stubs                           │
+│     └── doNothing().doThrow().when(mock).voidMethod()     │
+│     └── Different behavior on consecutive calls           │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+🎯 Real-World Use Cases
+1. Database Operation Testing
+java
+@Test
+public void testDatabaseOperations() {
+    // Stub save operation
+    doNothing().when(mockApi).saveUser(anyString(), anyString());
+    
+    // Stub delete to throw constraint violation
+    doThrow(new SQLException("Foreign key constraint violation"))
+        .when(mockApi).deleteRecord(anyLong());
+    
+    // Test save
+    service.registerUser("john", "pass");
+    verify(mockApi).saveUser("john", "pass");
+    
+    // Test delete with error
+    assertThrows(SQLException.class, () -> {
+        service.deleteUser(1L);
+    });
+}
+2. Email Service Testing
+java
+@Test
+public void testEmailService() {
+    // Stub email sending
+    doAnswer(invocation -> {
+        String to = invocation.getArgument(0);
+        String subject = invocation.getArgument(1);
+        String body = invocation.getArgument(2);
+        
+        // Validate email format
+        if (!to.contains("@")) {
+            throw new IllegalArgumentException("Invalid email");
+        }
+        
+        // Log email sending (for testing)
+        System.out.println("Sending email to: " + to);
+        return null;
+    }).when(mockApi).sendEmail(anyString(), anyString(), anyString());
+    
+    // Test valid email
+    service.notifyUser("test@email.com", "Welcome", "Hello");
+    verify(mockApi).sendEmail("test@email.com", "Welcome", "Hello");
+    
+    // Test invalid email
+    assertThrows(IllegalArgumentException.class, () -> {
+        service.notifyUser("invalid-email", "Subject", "Body");
+    });
+}
+3. Logging and Monitoring
+java
+@Test
+public void testLoggingAndMonitoring() {
+    // Capture log events
+    doAnswer(invocation -> {
+        String eventType = invocation.getArgument(0);
+        Map<String, Object> metadata = invocation.getArgument(1);
+        
+        // Validate event data
+        assertNotNull(eventType);
+        assertNotNull(metadata);
+        
+        // Simulate logging
+        System.out.println("EVENT: " + eventType + " - " + metadata);
+        return null;
+    }).when(mockApi).logEvent(anyString(), anyMap());
+    
+    // Trigger events
+    service.registerUser("john", "pass");
+    service.deleteUser(1L);
+    service.refreshCache();
+    
+    // Verify all events were logged
+    verify(mockApi, times(3)).logEvent(anyString(), anyMap());
+    
+    // Verify specific events
+    verify(mockApi).logEvent(eq("USER_REGISTERED"), 
+        argThat(map -> map.containsKey("username")));
+    verify(mockApi).logEvent(eq("USER_DELETED"), 
+        argThat(map -> map.containsKey("userId")));
+    verify(mockApi).logEvent(eq("CACHE_CLEARED"), anyMap());
+}
+⚠️ Common Pitfalls and Solutions
+Pitfall 1: Forgetting doNothing() for Void Methods
+java
+// ❌ WRONG - Can't use when().thenReturn() for void
+when(mockApi.saveUser(anyString(), anyString())).thenReturn(null);
+// ERROR! saveUser() is void, cannot return value
+// ✅ CORRECT - Use doNothing()
+doNothing().when(mockApi).saveUser(anyString(), anyString());
+Pitfall 2: Incorrect Exception Type
+java
+// ❌ WRONG - Exception doesn't match
+doThrow(new RuntimeException()).when(mockApi).saveUser(anyString(), anyString());
+// Test expecting IllegalArgumentException will fail
+// ✅ CORRECT - Throw matching exception
+doThrow(new IllegalArgumentException("Invalid user"))
+    .when(mockApi).saveUser(anyString(), anyString());
+Pitfall 3: Not Specifying Matchers Properly
+java
+// ❌ WRONG - Mixing exact values and matchers without eq()
+doNothing().when(mockApi).saveUser("john", anyString());
+// ERROR! Can't mix exact and matchers
+// ✅ CORRECT - Use eq() for exact values
+doNothing().when(mockApi).saveUser(eq("john"), anyString());
+Pitfall 4: Assuming Void Methods Return Something
+java
+// ❌ WRONG - Trying to capture return value
+String result = service.saveData("test");  // ERROR! saveData returns void
+// ✅ CORRECT - Void methods don't return anything
+service.saveData("test");
+📊 Comparison: Void vs Non-Void Methods
+Aspect
+Non-Void Methods
+Void Methods
+Return Type
+Value
+void
+Stubbing
+when().thenReturn()
+doNothing().when()
+Exception Stubbing
+when().thenThrow()
+doThrow().when()
+Custom Behavior
+when().thenAnswer()
+doAnswer().when()
+Default Behavior
+Returns null/0/false
+Does nothing
+Verification
+Same (verify())
+Same (verify())
+🧪 Advanced Example: Complete Service Testing
+java
+@Test
+public void completeVoidMethodTest() {
+    // 1. Setup mocks with different behaviors
+    doNothing().when(mockApi).saveUser(anyString(), anyString());
+    doThrow(new RuntimeException("Delete failed"))
+        .when(mockApi).deleteRecord(eq(1L));
+    doAnswer(invocation -> {
+        String data = invocation.getArgument(0);
+        if (data == null || data.isEmpty()) {
+            throw new IllegalArgumentException("Data cannot be empty");
+        }
+        return null;
+    }).when(mockApi).updateData(anyString());
+    
+    // 2. Test successful operations
+    service.registerUser("alice", "password123");
+    verify(mockApi).saveUser("alice", "password123");
+    
+    service.saveData("test data");
+    verify(mockApi).updateData("test data");
+    
+    // 3. Test operations that should fail
+    assertThrows(RuntimeException.class, () -> {
+        service.deleteUser(1L);
+    });
+    verify(mockApi).deleteRecord(1L);
+    
+    // 4. Test input validation
+    assertThrows(IllegalArgumentException.class, () -> {
+        service.saveData(null);
+    });
+    verify(mockApi, never()).updateData(null);
+    
+    assertThrows(IllegalArgumentException.class, () -> {
+        service.saveData("");
+    });
+    verify(mockApi, never()).updateData("");
+    
+    // 5. Verify overall interactions
+    verify(mockApi, times(1)).saveUser(anyString(), anyString());
+    verify(mockApi, times(1)).updateData(anyString());
+    verify(mockApi, times(1)).deleteRecord(anyLong());
+    verifyNoMoreInteractions(mockApi);
+}
+🎓 Key Takeaways for Exercise 4
+Void methods require special stubbing: Use doXxx().when()
+doNothing() is the default behavior (method does nothing)
+doThrow() makes void methods throw exceptions
+doAnswer() provides custom behavior with argument access
+Verification is the same as non-void methods
+Don't try to return values from void methods
+Use eq() when mixing exact values with matchers
+Test exceptions thrown by void methods
+🚀 Quick Reference Card
+java
+// ============================================
+// QUICK REFERENCE - VOID METHODS
+// ============================================
+// 1. DO NOTHING (Default)
+doNothing().when(mock).voidMethod();
+// 2. THROW EXCEPTION
+doThrow(RuntimeException.class).when(mock).voidMethod();
+doThrow(new RuntimeException("msg")).when(mock).voidMethod();
+// 3. CUSTOM BEHAVIOR
+doAnswer(invocation -> {
+    String arg = invocation.getArgument(0);
+    // custom logic
+    return null; // for void methods
+}).when(mock).voidMethod();
+// 4. MULTIPLE CALLS (different behavior)
+doNothing()
+    .doThrow(RuntimeException.class)
+    .when(mock).voidMethod();
+// 1st call: do nothing
+// 2nd call: throw exception
+// 5. WITH ARGUMENT MATCHERS
+doNothing().when(mock).voidMethod(
+    anyString(),
+    eq("exact"),
+    argThat(s -> s.length() > 5)
+);
+// 6. VERIFICATION
+verify(mock).voidMethod(arg1, arg2);
+verify(mock, times(3)).voidMethod();
+verify(mock, never()).voidMethod();
+Exercise 5: Mocking and Stubbing with Multiple Returns
+Scenario:
+You need to test a service that depends on an external API with multiple return values.
+Steps:
+Create a mock object for the external API.
+Stub the methods to return different values on consecutive calls.
+Write a test case that uses the mock object.
+Why Multiple Returns Are Important?
+In real-world applications, methods are often called multiple times with different results:
+Pagination: First call returns page 1, second returns page 2
+Retry Logic: First call fails, second succeeds
+State Changes: First call returns "pending", second returns "completed"
+Iteration: Processing multiple items with different responses
+🔧 Step 1: Setup the Project
+ExternalApi.java (Enhanced for multiple returns)
+java
+package com.example;
+import java.util.List;
+import java.util.Map;
+public interface ExternalApi {
+    // ============================================
+    // METHODS WITH MULTIPLE RETURN SCENARIOS
+    // ============================================
+    
+    // Basic data fetching
+    String getData();
+    int getStatusCode();
+    
+    // User management
+    String findUser(String firstName, String lastName, int age);
+    User getUserById(int id);
+    List<User> getUsers(int page, int size);
+    
+    // Order processing
+    Order getOrderStatus(long orderId);
+    String processPayment(double amount);
+    
+    // File operations
+    byte[] downloadFile(String fileName);
+    boolean uploadFile(String fileName, byte[] content);
+    
+    // Complex operations
+    Response callExternalService(Request request);
+    Map<String, Object> fetchConfiguration(String key);
+}
+// Supporting classes
+class User {
+    private String name;
+    private int age;
+    private String email;
+    
+    public User(String name, int age, String email) {
+        this.name = name;
+        this.age = age;
+        this.email = email;
+    }
+    // getters and setters...
+}
+class Order {
+    private long id;
+    private String status;
+    private double amount;
+    
+    public Order(long id, String status, double amount) {
+        this.id = id;
+        this.status = status;
+        this.amount = amount;
+    }
+    // getters and setters...
+}
+class Request {
+    private String type;
+    private Map<String, Object> data;
+    // constructor, getters, setters...
+}
+class Response {
+    private boolean success;
+    private String message;
+    private Object data;
+    // constructor, getters, setters...
+}
+MyService.java (Service with multiple call scenarios)
+java
+package com.example;
+import java.util.ArrayList;
+import java.util.List;
+public class MyService {
+    private ExternalApi externalApi;
+    
+    public MyService(ExternalApi externalApi) {
+        this.externalApi = externalApi;
+    }
+    
+    // ============================================
+    // METHODS THAT CALL API MULTIPLE TIMES
+    // ============================================
+    
+    // 1. Simple multiple calls
+    public String fetchDataMultipleTimes() {
+        String result = "";
+        for (int i = 0; i < 3; i++) {
+            result += externalApi.getData() + " ";
+        }
+        return result.trim();
+    }
+    
+    // 2. Retry logic
+    public String fetchWithRetry(int maxRetries) {
+        Exception lastException = null;
+        for (int i = 0; i < maxRetries; i++) {
+            try {
+                return externalApi.getData();
+            } catch (Exception e) {
+                lastException = e;
+                // Log retry attempt
+                System.out.println("Retry " + (i + 1) + " failed");
+            }
+        }
+        throw new RuntimeException("All retries failed", lastException);
+    }
+    
+    // 3. Pagination
+    public List<User> getAllUsers() {
+        List<User> allUsers = new ArrayList<>();
+        int page = 0;
+        int pageSize = 10;
+        
+        while (true) {
+            List<User> pageUsers = externalApi.getUsers(page, pageSize);
+            if (pageUsers == null || pageUsers.isEmpty()) {
+                break;
+            }
+            allUsers.addAll(pageUsers);
+            page++;
+            if (pageUsers.size() < pageSize) {
+                break; // Last page
+            }
+        }
+        return allUsers;
+    }
+    
+    // 4. State transitions
+    public String trackOrderStatus(long orderId) {
+        Order order = externalApi.getOrderStatus(orderId);
+        while (!order.getStatus().equals("COMPLETED") && 
+               !order.getStatus().equals("FAILED")) {
+            // Wait or do something
+            order = externalApi.getOrderStatus(orderId);
+        }
+        return order.getStatus();
+    }
+    
+    // 5. Conditional processing
+    public String processPaymentWithRetry(double amount) {
+        try {
+            return externalApi.processPayment(amount);
+        } catch (Exception e) {
+            // Retry with different amount
+            return externalApi.processPayment(amount * 0.9);
+        }
+    }
+    
+    // 6. Bulk operations
+    public List<String> processFileDownloads(List<String> fileNames) {
+        List<String> results = new ArrayList<>();
+        for (String fileName : fileNames) {
+            try {
+                byte[] content = externalApi.downloadFile(fileName);
+                results.add(fileName + ": Success (" + content.length + " bytes)");
+            } catch (Exception e) {
+                results.add(fileName + ": Failed - " + e.getMessage());
+            }
+        }
+        return results;
+    }
+}
+📝 Step 2: Test Class with Multiple Returns
+java
+package com.example;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
+import java.util.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+public class MyServiceTest {
+    
+    private ExternalApi mockApi;
+    private MyService service;
+    
+    @BeforeEach
+    void setUp() {
+        mockApi = mock(ExternalApi.class);
+        service = new MyService(mockApi);
+    }
+    
+    // ============================================
+    // BASIC MULTIPLE RETURNS
+    // ============================================
+    
+    @Test
+    public void testBasicMultipleReturns() {
+        // STUB: Different returns on consecutive calls
+        when(mockApi.getData())
+            .thenReturn("First")
+            .thenReturn("Second")
+            .thenReturn("Third");
+        
+        // Call method multiple times
+        assertEquals("First", mockApi.getData());
+        assertEquals("Second", mockApi.getData());
+        assertEquals("Third", mockApi.getData());
+        
+        // Verify interactions
+        verify(mockApi, times(3)).getData();
+    }
+    
+    @Test
+    public void testMultipleReturnsWithService() {
+        // Stub multiple returns
+        when(mockApi.getData())
+            .thenReturn("Data1")
+            .thenReturn("Data2")
+            .thenReturn("Data3");
+        
+        // Service calls getData() multiple times
+        String result = service.fetchDataMultipleTimes();
+        
+        // Expected: "Data1 Data2 Data3"
+        assertEquals("Data1 Data2 Data3", result);
+        verify(mockApi, times(3)).getData();
+    }
+    
+    // ============================================
+    // SIMPLIFIED SYNTAX
+    // ============================================
+    
+    @Test
+    public void testSimplifiedMultipleReturns() {
+        // Alternative syntax using varargs
+        when(mockApi.getStatusCode()).thenReturn(200, 404, 500);
+        
+        assertEquals(200, mockApi.getStatusCode());
+        assertEquals(404, mockApi.getStatusCode());
+        assertEquals(500, mockApi.getStatusCode());
+        
+        // First 200, then 404, then 500, then 500 (continues with last value)
+        assertEquals(500, mockApi.getStatusCode()); // Returns 500 again
+    }
+    
+    // ============================================
+    // RETRY LOGIC TESTING
+    // ============================================
+    
+    @Test
+    public void testRetryLogic_SuccessAfterFailures() {
+        // First call fails, second succeeds
+        when(mockApi.getData())
+            .thenThrow(new RuntimeException("Network error"))
+            .thenReturn("Success data");
+        
+        // Service should retry and eventually succeed
+        String result = service.fetchWithRetry(3);
+        
+        assertEquals("Success data", result);
+        verify(mockApi, times(2)).getData();
+    }
+    
+    @Test
+    public void testRetryLogic_AllFailures() {
+        // All calls fail
+        when(mockApi.getData())
+            .thenThrow(new RuntimeException("Error 1"))
+            .thenThrow(new RuntimeException("Error 2"))
+            .thenThrow(new RuntimeException("Error 3"));
+        
+        // Should throw exception after all retries fail
+        assertThrows(RuntimeException.class, () -> {
+            service.fetchWithRetry(3);
+        });
+        
+        verify(mockApi, times(3)).getData();
+    }
+    
+    // ============================================
+    // PAGINATION TESTING
+    // ============================================
+    
+    @Test
+    public void testPagination_MultiplePages() {
+        // Create test data for multiple pages
+        List<User> page1 = Arrays.asList(
+            new User("Alice", 25, "alice@email.com"),
+            new User("Bob", 30, "bob@email.com")
+        );
+        List<User> page2 = Arrays.asList(
+            new User("Charlie", 35, "charlie@email.com")
+        );
+        List<User> page3 = new ArrayList<>(); // Empty last page
+        
+        // Stub different pages on consecutive calls
+        when(mockApi.getUsers(0, 10)).thenReturn(page1);
+        when(mockApi.getUsers(1, 10)).thenReturn(page2);
+        when(mockApi.getUsers(2, 10)).thenReturn(page3);
+        
+        // Get all users
+        List<User> allUsers = service.getAllUsers();
+        
+        // Should contain all users from all pages
+        assertEquals(3, allUsers.size());
+        assertEquals("Alice", allUsers.get(0).getName());
+        assertEquals("Bob", allUsers.get(1).getName());
+        assertEquals("Charlie", allUsers.get(2).getName());
+        
+        // Verify page requests
+        verify(mockApi).getUsers(0, 10);
+        verify(mockApi).getUsers(1, 10);
+        verify(mockApi).getUsers(2, 10);
+    }
+    
+    @Test
+    public void testPagination_SinglePage() {
+        // Only one page of data
+        List<User> page0 = Arrays.asList(
+            new User("Alice", 25, "alice@email.com"),
+            new User("Bob", 30, "bob@email.com")
+        );
+        
+        when(mockApi.getUsers(0, 10)).thenReturn(page0);
+        when(mockApi.getUsers(1, 10)).thenReturn(new ArrayList<>());
+        
+        List<User> allUsers = service.getAllUsers();
+        assertEquals(2, allUsers.size());
+        
+        verify(mockApi).getUsers(0, 10);
+        verify(mockApi).getUsers(1, 10);
+        verify(mockApi, never()).getUsers(2, 10);
+    }
+    
+    // ============================================
+    // STATE TRANSITION TESTING
+    // ============================================
+    
+    @Test
+    public void testStateTransitions() {
+        // Simulate order status changes
+        when(mockApi.getOrderStatus(100L))
+            .thenReturn(new Order(100L, "PENDING", 100.0))
+            .thenReturn(new Order(100L, "PROCESSING", 100.0))
+            .thenReturn(new Order(100L, "COMPLETED", 100.0));
+        
+        // Track order status
+        String finalStatus = service.trackOrderStatus(100L);
+        
+        assertEquals("COMPLETED", finalStatus);
+        verify(mockApi, times(3)).getOrderStatus(100L);
+    }
+    
+    @Test
+    public void testStateTransition_FailedState() {
+        // Order fails
+        when(mockApi.getOrderStatus(200L))
+            .thenReturn(new Order(200L, "PENDING", 200.0))
+            .thenReturn(new Order(200L, "FAILED", 200.0));
+        
+        String finalStatus = service.trackOrderStatus(200L);
+        
+        assertEquals("FAILED", finalStatus);
+        verify(mockApi, times(2)).getOrderStatus(200L);
+    }
+    
+    // ============================================
+    // CONDITIONAL PROCESSING TESTING
+    // ============================================
+    
+    @Test
+    public void testConditionalProcessing_FirstFails() {
+        // First payment fails, retry with reduced amount succeeds
+        when(mockApi.processPayment(100.0))
+            .thenThrow(new RuntimeException("Insufficient funds"));
+        when(mockApi.processPayment(90.0))
+            .thenReturn("Payment processed: 90.0");
+        
+        String result = service.processPaymentWithRetry(100.0);
+        
+        assertEquals("Payment processed: 90.0", result);
+        verify(mockApi).processPayment(100.0);
+        verify(mockApi).processPayment(90.0);
+    }
+    
+    @Test
+    public void testConditionalProcessing_FirstSucceeds() {
+        // First payment succeeds
+        when(mockApi.processPayment(100.0))
+            .thenReturn("Payment processed: 100.0");
+        
+        String result = service.processPaymentWithRetry(100.0);
+        
+        assertEquals("Payment processed: 100.0", result);
+        verify(mockApi).processPayment(100.0);
+        verify(mockApi, never()).processPayment(90.0);
+    }
+    
+    // ============================================
+    // MULTIPLE DIFFERENT METHODS
+    // ============================================
+    
+    @Test
+    public void testMultipleMethodsWithDifferentReturns() {
+        // Stub different methods with multiple returns
+        when(mockApi.getData())
+            .thenReturn("Data1", "Data2");
+        when(mockApi.getStatusCode())
+            .thenReturn(200, 404, 500);
+        when(mockApi.findUser(anyString(), anyString(), anyInt()))
+            .thenReturn("User found", "User not found");
+        
+        // Test getData
+        assertEquals("Data1", mockApi.getData());
+        assertEquals("Data2", mockApi.getData());
+        
+        // Test getStatusCode
+        assertEquals(200, mockApi.getStatusCode());
+        assertEquals(404, mockApi.getStatusCode());
+        assertEquals(500, mockApi.getStatusCode());
+        
+        // Test findUser
+        assertEquals("User found", mockApi.findUser("John", "Doe", 30));
+        assertEquals("User not found", mockApi.findUser("Jane", "Doe", 25));
+        
+        // Verify all interactions
+        verify(mockApi, times(2)).getData();
+        verify(mockApi, times(3)).getStatusCode();
+        verify(mockApi, times(2)).findUser(anyString(), anyString(), anyInt());
+    }
+    
+    // ============================================
+    // MIXING EXCEPTIONS AND RETURNS
+    // ============================================
+    
+    @Test
+    public void testMixingExceptionsAndReturns() {
+        // Mix exceptions and returns
+        when(mockApi.getData())
+            .thenThrow(new RuntimeException("Error 1"))
+            .thenThrow(new RuntimeException("Error 2"))
+            .thenReturn("Success")
+            .thenReturn("Final");
+        
+        // First call throws
+        assertThrows(RuntimeException.class, () -> mockApi.getData());
+        
+        // Second call throws
+        assertThrows(RuntimeException.class, () -> mockApi.getData());
+        
+        // Third call returns
+        assertEquals("Success", mockApi.getData());
+        
+        // Fourth call returns
+        assertEquals("Final", mockApi.getData());
+        
+        verify(mockApi, times(4)).getData();
+    }
+    
+    // ============================================
+    // BULK OPERATIONS TESTING
+    // ============================================
+    
+    @Test
+    public void testBulkOperations_MixedSuccessAndFailure() {
+        // Stub different files with different behaviors
+        byte[] file1Content = "Content 1".getBytes();
+        byte[] file2Content = "Content 2".getBytes();
+        
+        when(mockApi.downloadFile("file1.txt"))
+            .thenReturn(file1Content);
+        when(mockApi.downloadFile("file2.txt"))
+            .thenReturn(file2Content);
+        when(mockApi.downloadFile("file3.txt"))
+            .thenThrow(new RuntimeException("File not found"));
+        when(mockApi.downloadFile("file4.txt"))
+            .thenThrow(new RuntimeException("Access denied"));
+        
+        // Process files
+        List<String> fileNames = Arrays.asList(
+            "file1.txt", "file2.txt", "file3.txt", "file4.txt"
+        );
+        List<String> results = service.processFileDownloads(fileNames);
+        
+        // Verify results
+        assertEquals(4, results.size());
+        assertTrue(results.get(0).contains("Success"));
+        assertTrue(results.get(1).contains("Success"));
+        assertTrue(results.get(2).contains("Failed"));
+        assertTrue(results.get(3).contains("Failed"));
+        
+        // Verify each file was requested
+        verify(mockApi).downloadFile("file1.txt");
+        verify(mockApi).downloadFile("file2.txt");
+        verify(mockApi).downloadFile("file3.txt");
+        verify(mockApi).downloadFile("file4.txt");
+    }
+    
+    // ============================================
+    // DYNAMIC RESPONSES WITH ANSWER
+    // ============================================
+    
+    @Test
+    public void testDynamicMultipleReturns() {
+        // Use Answer for dynamic responses
+        when(mockApi.getData()).thenAnswer(invocation -> {
+            // Simulate sequential responses
+            if (!called) {
+                called = true;
+                return "First call";
+            } else {
+                return "Subsequent call";
+            }
+        });
+        
+        // First call
+        assertEquals("First call", mockApi.getData());
+        
+        // Second call
+        assertEquals("Subsequent call", mockApi.getData());
+        
+        // Third call
+        assertEquals("Subsequent call", mockApi.getData());
+    }
+    
+    private boolean called = false;
+    
+    @Test
+    public void testDynamicBasedOnArguments() {
+        // Different responses based on arguments
+        when(mockApi.findUser(anyString(), anyString(), anyInt()))
+            .thenAnswer(invocation -> {
+                String firstName = invocation.getArgument(0);
+                String lastName = invocation.getArgument(1);
+                int age = invocation.getArgument(2);
+                
+                if (firstName.equals("Admin")) {
+                    return "Admin user found";
+                } else if (age > 18) {
+                    return "Adult user found";
+                } else {
+                    return "Minor user found";
+                }
+            });
+        
+        assertEquals("Admin user found", 
+            mockApi.findUser("Admin", "User", 30));
+        assertEquals("Adult user found", 
+            mockApi.findUser("John", "Doe", 25));
+        assertEquals("Minor user found", 
+            mockApi.findUser("Jane", "Doe", 15));
+    }
+}
+🔍 Deep Dive: Multiple Returns Mechanism
+How Multiple Returns Work
+text
+┌─────────────────────────────────────────────────────────────┐
+│              MULTIPLE RETURNS MECHANISM                    │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  when(mock.getData())                                      │
+│      .thenReturn("A")                                      │
+│      .thenReturn("B")                                      │
+│      .thenReturn("C")                                      │
+│                                                             │
+│  ┌─────────────────────────────────────────────┐          │
+│  │  Internal Queue of Responses                │          │
+│  │  ┌───────────────────────────────────┐     │          │
+│  │  │ Position 1: "A"                   │     │          │
+│  │  │ Position 2: "B"                   │     │          │
+│  │  │ Position 3: "C"                   │     │          │
+│  │  │ Position 4+: "C" (repeats last)   │     │          │
+│  │  └───────────────────────────────────┘     │          │
+│  └─────────────────────────────────────────────┘          │
+│                                                             │
+│  Call 1: getData() → "A" (consume position 1)             │
+│  Call 2: getData() → "B" (consume position 2)             │
+│  Call 3: getData() → "C" (consume position 3)             │
+│  Call 4: getData() → "C" (last value repeats)             │
+│  Call 5: getData() → "C" (last value repeats)             │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+🎯 Real-World Use Cases
+1. Circuit Breaker Pattern Testing
+java
+@Test
+public void testCircuitBreakerPattern() {
+    // Simulate circuit breaker states
+    when(mockApi.callExternalService(any(Request.class)))
+        .thenReturn(new Response(false, "Service unavailable", null))
+        .thenReturn(new Response(false, "Still unavailable", null))
+        .thenReturn(new Response(true, "Success", "Data"));
+    
+    // First two calls fail
+    for (int i = 0; i < 2; i++) {
+        Response response = mockApi.callExternalService(new Request());
+        assertFalse(response.isSuccess());
+    }
+    
+    // Third call succeeds (circuit closed)
+    Response response = mockApi.callExternalService(new Request());
+    assertTrue(response.isSuccess());
+}
+2. Rate Limiting Test
+java
+@Test
+public void testRateLimiting() {
+    // Simulate rate limiting
+    when(mockApi.getData())
+        .thenReturn("Success", "Success", "Rate limited", "Rate limited");
+    
+    // First two calls succeed
+    for (int i = 0; i < 2; i++) {
+        assertEquals("Success", mockApi.getData());
+    }
+    
+    // Next calls are rate limited
+    for (int i = 0; i < 2; i++) {
+        assertEquals("Rate limited", mockApi.getData());
+    }
+}
+3. Progressive Enhancement
+java
+@Test
+public void testProgressiveDataRetrieval() {
+    // Simulate progressive data loading
+    when(mockApi.fetchConfiguration("app"))
+        .thenReturn(
+            Map.of("version", "1.0", "featureA", "false"),
+            Map.of("version", "1.1", "featureA", "true", "featureB", "false"),
+            Map.of("version", "1.2", "featureA", "true", "featureB", "true")
+        );
+    
+    // Test progressive feature rollouts
+    Map<String, Object> config1 = mockApi.fetchConfiguration("app");
+    assertEquals("false", config1.get("featureA"));
+    
+    Map<String, Object> config2 = mockApi.fetchConfiguration("app");
+    assertEquals("true", config2.get("featureA"));
+    assertEquals("false", config2.get("featureB"));
+    
+    Map<String, Object> config3 = mockApi.fetchConfiguration("app");
+    assertEquals("true", config3.get("featureA"));
+    assertEquals("true", config3.get("featureB"));
+}
+⚠️ Common Pitfalls and Solutions
+Pitfall 1: Not Enough Stubs
+java
+// ❌ WRONG - Only one stub but multiple calls
+when(mockApi.getData()).thenReturn("A");
+mockApi.getData(); // "A"
+mockApi.getData(); // "A" (OK, returns last value)
+// But if you need different values:
+when(mockApi.getData()).thenReturn("A").thenReturn("B");
+mockApi.getData(); // "A"
+mockApi.getData(); // "B"
+Pitfall 2: Overriding Stubs
+java
+// ❌ WRONG - This overwrites previous stub
+when(mockApi.getData()).thenReturn("First");
+when(mockApi.getData()).thenReturn("Second"); // Overwrites!
+// ✅ CORRECT - Use multiple returns
+when(mockApi.getData())
+    .thenReturn("First")
+    .thenReturn("Second");
+Pitfall 3: Complex Return Values
+java
+// ❌ WRONG - Returning same object reference
+List<String> list = Arrays.asList("A", "B");
+when(mockApi.getData()).thenReturn(list).thenReturn(list);
+// Both calls return the SAME list object!
+// ✅ CORRECT - Create new objects each time
+when(mockApi.getData())
+    .thenReturn(new ArrayList<>(Arrays.asList("A", "B")))
+    .thenReturn(new ArrayList<>(Arrays.asList("C", "D")));
+📊 Comparison: Single vs Multiple Returns
+Aspect
+Single Return
+Multiple Returns
+Syntax
+thenReturn(value)
+thenReturn(v1, v2, v3)
+Use Case
+Method called once
+Method called multiple times
+State
+Always returns same value
+Returns different values sequentially
+Memory
+One value stored
+Multiple values stored
+After last
+Returns same value
+Continues with last value
+Exceptions
+One exception type
+Can mix exceptions and returns
+🧪 Advanced Test Patterns
+Pattern 1: Dynamic Response Based on Call Count
+java
+@Test
+public void testDynamicCallCount() {
+    AtomicInteger callCount = new AtomicInteger(0);
+    
+    when(mockApi.getData()).thenAnswer(invocation -> {
+        int count = callCount.incrementAndGet();
+        if (count == 1) return "First";
+        if (count == 2) return "Second";
+        if (count == 3) throw new RuntimeException("Third call fails");
+        return "Default";
+    });
+    
+    assertEquals("First", mockApi.getData());
+    assertEquals("Second", mockApi.getData());
+    assertThrows(RuntimeException.class, () -> mockApi.getData());
+    assertEquals("Default", mockApi.getData());
+}
+Pattern 2: State Machine Testing
+java
+@Test
+public void testStateMachine() {
+    // Simulate state machine with multiple returns
+    when(mockApi.getOrderStatus(anyLong()))
+        .thenReturn(new Order(1L, "CREATED", 100.0))
+        .thenReturn(new Order(1L, "CONFIRMED", 100.0))
+        .thenReturn(new Order(1L, "PROCESSING", 100.0))
+        .thenReturn(new Order(1L, "SHIPPED", 100.0))
+        .thenReturn(new Order(1L, "DELIVERED", 100.0));
+    
+    // Test full lifecycle
+    String[] expectedStates = {"CREATED", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"};
+    for (String expected : expectedStates) {
+        Order order = mockApi.getOrderStatus(1L);
+        assertEquals(expected, order.getStatus());
+    }
+}
+🎓 Key Takeaways for Exercise 5
+Multiple returns allow testing sequential method calls
+Syntax: thenReturn(value1, value2, value3) or chain with thenReturn()
+Last value repeats for subsequent calls
+Can mix exceptions and returns in the chain
+Use for testing retry logic, pagination, state transitions
+Dynamic responses with thenAnswer() for complex scenarios
+Verify correct call counts with times(n)
+🚀 Quick Reference Card
+java
+// ============================================
+// QUICK REFERENCE - MULTIPLE RETURNS
+// ============================================
+// 1. BASIC MULTIPLE RETURNS
+when(mock.method())
+    .thenReturn("First", "Second", "Third");
+// OR (chained)
+when(mock.method())
+    .thenReturn("First")
+    .thenReturn("Second")
+    .thenReturn("Third");
+// 2. WITH EXCEPTIONS
+when(mock.method())
+    .thenThrow(new RuntimeException())
+    .thenReturn("Success");
+// 3. WITH DIFFERENT ARGUMENTS
+when(mock.method("arg1")).thenReturn("Result1");
+when(mock.method("arg2")).thenReturn("Result2");
+// 4. DYNAMIC WITH ANSWER
+when(mock.method()).thenAnswer(invocation -> {
+    // Custom logic based on call count or arguments
+    return "Dynamic response";
+});
+// 5. MIXING EXCEPTIONS AND RETURNS
+when(mock.method())
+    .thenThrow(new RuntimeException("Error 1"))
+    .thenThrow(new RuntimeException("Error 2"))
+    .thenReturn("Success")
+    .thenReturn("Final");
+// 6. VERIFICATION
+verify(mock, times(3)).method();
+Exercise 6: Verifying Interaction Order
+Scenario:
+You need to ensure that methods are called in a specific order.
+Steps:
+Create a mock object.
+Call the methods in a specific order.
+Verify the interaction order.
+Why Order Verification Matters?
+When you're testing complex business logic, the order of operations often matters:
+Payment Processing: Must validate before charging
+Database Operations: Must connect before querying
+File Operations: Must open before reading
+Email Sending: Must set recipients before sending
+State Transitions: Must follow valid state paths
+🔧 Complete Setup
+ExternalApi.java
+java
+package com.example;
+public interface ExternalApi {
+    // Database operations
+    void connect();
+    void executeQuery(String query);
+    void disconnect();
+    
+    // Payment operations
+    void validatePayment(double amount);
+    void processPayment(double amount);
+    void confirmPayment(long transactionId);
+    
+    // File operations
+    void openFile(String fileName);
+    byte[] readFile(String fileName);
+    void closeFile();
+    
+    // Email operations
+    void createSession();
+    void setRecipient(String email);
+    void setSubject(String subject);
+    void setBody(String body);
+    void send();
+    void closeSession();
+    
+    // Transaction operations
+    void beginTransaction();
+    void commit();
+    void rollback();
+}
+MyService.java (Service with ordered operations)
+java
+package com.example;
+public class MyService {
+    private ExternalApi externalApi;
+    
+    public MyService(ExternalApi externalApi) {
+        this.externalApi = externalApi;
+    }
+    
+    // 1. Database workflow
+    public void processDatabaseQuery(String query) {
+        externalApi.connect();
+        try {
+            externalApi.executeQuery(query);
+        } finally {
+            externalApi.disconnect();
+        }
+    }
+    
+    // 2. Payment workflow
+    public void processPayment(double amount) {
+        externalApi.validatePayment(amount);
+        externalApi.processPayment(amount);
+        externalApi.confirmPayment(12345L);
+    }
+    
+    // 3. File workflow with error handling
+    public byte[] readFileSafely(String fileName) {
+        externalApi.openFile(fileName);
+        try {
+            byte[] content = externalApi.readFile(fileName);
+            externalApi.closeFile();
+            return content;
+        } catch (Exception e) {
+            externalApi.closeFile();
+            throw e;
+        }
+    }
+    
+    // 4. Email workflow
+    public void sendEmail(String to, String subject, String body) {
+        externalApi.createSession();
+        externalApi.setRecipient(to);
+        externalApi.setSubject(subject);
+        externalApi.setBody(body);
+        externalApi.send();
+        externalApi.closeSession();
+    }
+    
+    // 5. Transaction workflow with rollback
+    public void transactionOperation(String query, boolean shouldSucceed) {
+        externalApi.beginTransaction();
+        try {
+            externalApi.executeQuery(query);
+            if (!shouldSucceed) {
+                throw new RuntimeException("Operation failed");
+            }
+            externalApi.commit();
+        } catch (Exception e) {
+            externalApi.rollback();
+            throw e;
+        }
+    }
+}
+📝 Step-by-Step Test Implementation
+MyServiceTest.java
+java
+package com.example;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
+public class MyServiceTest {
+    
+    private ExternalApi mockApi;
+    private MyService service;
+    
+    @BeforeEach
+    void setUp() {
+        // 1. CREATE MOCK
+        mockApi = mock(ExternalApi.class);
+        service = new MyService(mockApi);
+    }
+    
+    // ============================================
+    // BASIC ORDER VERIFICATION
+    // ============================================
+    
+    @Test
+    public void testDatabaseWorkflowOrder() {
+        // 2. CALL METHODS
+        service.processDatabaseQuery("SELECT * FROM users");
+        
+        // 3. VERIFY ORDER
+        InOrder inOrder = inOrder(mockApi);
+        inOrder.verify(mockApi).connect();
+        inOrder.verify(mockApi).executeQuery("SELECT * FROM users");
+        inOrder.verify(mockApi).disconnect();
+        
+        // This verifies the exact order of method calls
+        System.out.println("✓ Database workflow order verified");
+    }
+    
+    // ============================================
+    // PAYMENT WORKFLOW ORDER
+    // ============================================
+    
+    @Test
+    public void testPaymentWorkflowOrder() {
+        // Execute
+        service.processPayment(100.50);
+        
+        // Verify order
+        InOrder inOrder = inOrder(mockApi);
+        inOrder.verify(mockApi).validatePayment(100.50);
+        inOrder.verify(mockApi).processPayment(100.50);
+        inOrder.verify(mockApi).confirmPayment(12345L);
+        
+        // Verify NO other interactions
+        verifyNoMoreInteractions(mockApi);
+    }
+    
+    // ============================================
+    // FILE WORKFLOW WITH ERROR
+    // ============================================
+    
+    @Test
+    public void testFileWorkflowOrder_Success() throws Exception {
+        byte[] expected = "Hello".getBytes();
+        when(mockApi.readFile("test.txt")).thenReturn(expected);
+        
+        // Execute
+        byte[] actual = service.readFileSafely("test.txt");
+        
+        // Verify content
+        assertArrayEquals(expected, actual);
+        
+        // Verify order
+        InOrder inOrder = inOrder(mockApi);
+        inOrder.verify(mockApi).openFile("test.txt");
+        inOrder.verify(mockApi).readFile("test.txt");
+        inOrder.verify(mockApi).closeFile();
+    }
+    
+    @Test
+    public void testFileWorkflowOrder_Error() throws Exception {
+        // Stub to throw exception
+        when(mockApi.readFile("test.txt"))
+            .thenThrow(new RuntimeException("Read error"));
+        
+        // Execute and expect exception
+        assertThrows(RuntimeException.class, () -> {
+            service.readFileSafely("test.txt");
+        });
+        
+        // Verify order - close should still be called
+        InOrder inOrder = inOrder(mockApi);
+        inOrder.verify(mockApi).openFile("test.txt");
+        inOrder.verify(mockApi).readFile("test.txt");
+        inOrder.verify(mockApi).closeFile(); // Still called despite error
+    }
+    
+    // ============================================
+    // EMAIL WORKFLOW ORDER
+    // ============================================
+    
+    @Test
+    public void testEmailWorkflowOrder() {
+        // Execute
+        service.sendEmail("test@email.com", "Hello", "Welcome!");
+        
+        // Verify exact order
+        InOrder inOrder = inOrder(mockApi);
+        inOrder.verify(mockApi).createSession();
+        inOrder.verify(mockApi).setRecipient("test@email.com");
+        inOrder.verify(mockApi).setSubject("Hello");
+        inOrder.verify(mockApi).setBody("Welcome!");
+        inOrder.verify(mockApi).send();
+        inOrder.verify(mockApi).closeSession();
+        
+        // Verify no unexpected calls
+        verifyNoMoreInteractions(mockApi);
+    }
+    
+    // ============================================
+    // TRANSACTION WORKFLOW - SUCCESS
+    // ============================================
+    
+    @Test
+    public void testTransactionOrder_Success() {
+        // Execute successful transaction
+        service.transactionOperation("UPDATE users SET active=true", true);
+        
+        // Verify order
+        InOrder inOrder = inOrder(mockApi);
+        inOrder.verify(mockApi).beginTransaction();
+        inOrder.verify(mockApi).executeQuery("UPDATE users SET active=true");
+        inOrder.verify(mockApi).commit();
+        
+        // Verify rollback was NOT called
+        verify(mockApi, never()).rollback();
+    }
+    
+    // ============================================
+    // TRANSACTION WORKFLOW - ROLLBACK
+    // ============================================
+    
+    @Test
+    public void testTransactionOrder_Rollback() {
+        // Execute failing transaction
+        assertThrows(RuntimeException.class, () -> {
+            service.transactionOperation("UPDATE users SET active=true", false);
+        });
+        
+        // Verify order with rollback
+        InOrder inOrder = inOrder(mockApi);
+        inOrder.verify(mockApi).beginTransaction();
+        inOrder.verify(mockApi).executeQuery("UPDATE users SET active=true");
+        inOrder.verify(mockApi).rollback();
+        
+        // Verify commit was NOT called
+        verify(mockApi, never()).commit();
+    }
+    
+    // ============================================
+    // ORDER WITH CALL COUNTS
+    // ============================================
+    
+    @Test
+    public void testOrderWithCallCounts() {
+        // Execute multiple database operations
+        service.processDatabaseQuery("SELECT * FROM users");
+        service.processDatabaseQuery("SELECT * FROM orders");
+        
+        // Verify order with call counts
+        InOrder inOrder = inOrder(mockApi);
+        
+        // First operation
+        inOrder.verify(mockApi).connect();
+        inOrder.verify(mockApi).executeQuery("SELECT * FROM users");
+        inOrder.verify(mockApi).disconnect();
+        
+        // Second operation
+        inOrder.verify(mockApi).connect();
+        inOrder.verify(mockApi).executeQuery("SELECT * FROM orders");
+        inOrder.verify(mockApi).disconnect();
+        
+        // Verify total calls
+        verify(mockApi, times(2)).connect();
+        verify(mockApi, times(2)).disconnect();
+    }
+    
+    // ============================================
+    // ORDER WITH ARGUMENT MATCHERS
+    // ============================================
+    
+    @Test
+    public void testOrderWithArgumentMatchers() {
+        // Execute
+        service.processPayment(50.0);
+        service.processPayment(75.0);
+        
+        // Verify order with matchers
+        InOrder inOrder = inOrder(mockApi);
+        
+        // First payment
+        inOrder.verify(mockApi).validatePayment(anyDouble());
+        inOrder.verify(mockApi).processPayment(anyDouble());
+        inOrder.verify(mockApi).confirmPayment(anyLong());
+        
+        // Second payment
+        inOrder.verify(mockApi).validatePayment(anyDouble());
+        inOrder.verify(mockApi).processPayment(anyDouble());
+        inOrder.verify(mockApi).confirmPayment(anyLong());
+    }
+    
+    // ============================================
+    // ORDER WITH SPECIFIC VALUES
+    // ============================================
+    
+    @Test
+    public void testOrderWithSpecificValues() {
+        // Execute with specific values
+        service.sendEmail("user1@email.com", "Subject1", "Body1");
+        service.sendEmail("user2@email.com", "Subject2", "Body2");
+        
+        // Verify exact order with exact values
+        InOrder inOrder = inOrder(mockApi);
+        
+        // First email
+        inOrder.verify(mockApi).createSession();
+        inOrder.verify(mockApi).setRecipient("user1@email.com");
+        inOrder.verify(mockApi).setSubject("Subject1");
+        inOrder.verify(mockApi).setBody("Body1");
+        inOrder.verify(mockApi).send();
+        inOrder.verify(mockApi).closeSession();
+        
+        // Second email
+        inOrder.verify(mockApi).createSession();
+        inOrder.verify(mockApi).setRecipient("user2@email.com");
+        inOrder.verify(mockApi).setSubject("Subject2");
+        inOrder.verify(mockApi).setBody("Body2");
+        inOrder.verify(mockApi).send();
+        inOrder.verify(mockApi).closeSession();
+    }
+}
+🔍 Deep Dive: Understanding InOrder
+How InOrder Works Internally
+text
+┌─────────────────────────────────────────────────────────────────┐
+│                    INORDER VERIFICATION FLOW                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Step 1: Record All Method Calls                               │
+│  ┌─────────────────────────────────────────────────────┐      │
+│  │ Mock Call History:                                   │      │
+│  │ Position 1: connect()                               │      │
+│  │ Position 2: executeQuery("SELECT")                 │      │
+│  │ Position 3: disconnect()                           │      │
+│  │ Position 4: connect()                              │      │
+│  │ Position 5: executeQuery("INSERT")                │      │
+│  │ Position 6: disconnect()                           │      │
+│  └─────────────────────────────────────────────────────┘      │
+│                                                                 │
+│  Step 2: Create InOrder Verifier                               │
+│  InOrder inOrder = inOrder(mockApi);                          │
+│  ┌─────────────────────────────────────────────────────┐      │
+│  │ InOrder State:                                       │      │
+│  │ Current Position: 0 (start)                         │      │
+│  │ Mocks being tracked: [mockApi]                      │      │
+│  └─────────────────────────────────────────────────────┘      │
+│                                                                 │
+│  Step 3: Verify First Call                                     │
+│  inOrder.verify(mockApi).connect();                           │
+│  ┌─────────────────────────────────────────────────────┐      │
+│  │ Check Position 1: connect() ✓                      │      │
+│  │ Advance to Position: 2                             │      │
+│  └─────────────────────────────────────────────────────┘      │
+│                                                                 │
+│  Step 4: Verify Second Call                                    │
+│  inOrder.verify(mockApi).executeQuery("SELECT");              │
+│  ┌─────────────────────────────────────────────────────┐      │
+│  │ Check Position 2: executeQuery("SELECT") ✓         │      │
+│  │ Advance to Position: 3                             │      │
+│  └─────────────────────────────────────────────────────┘      │
+│                                                                 │
+│  Step 5: Verify Third Call                                     │
+│  inOrder.verify(mockApi).disconnect();                        │
+│  ┌─────────────────────────────────────────────────────┐      │
+│  │ Check Position 3: disconnect() ✓                   │      │
+│  │ Advance to Position: 4                             │      │
+│  └─────────────────────────────────────────────────────┘      │
+│                                                                 │
+│  Result: All verifications pass! ✓                             │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+🎯 Real-World Use Cases
+1. Order Processing Workflow
+java
+@Test
+public void testOrderProcessingWorkflow() {
+    service.createOrder(orderData);
+    service.validateOrder(orderId);
+    service.payOrder(orderId);
+    service.shipOrder(orderId);
+    service.completeOrder(orderId);
+    
+    InOrder inOrder = inOrder(mockApi);
+    inOrder.verify(mockApi).saveOrderData(orderData);
+    inOrder.verify(mockApi).validateOrder(orderId);
+    inOrder.verify(mockApi).processPayment(orderId);
+    inOrder.verify(mockApi).generateShipment(orderId);
+    inOrder.verify(mockApi).updateOrderStatus(orderId, "COMPLETED");
+}
+2. User Registration Workflow
+java
+@Test
+public void testUserRegistrationWorkflow() {
+    service.registerUser("john@email.com", "password123");
+    
+    InOrder inOrder = inOrder(mockApi);
+    inOrder.verify(mockApi).validateEmail("john@email.com");
+    inOrder.verify(mockApi).encryptPassword("password123");
+    inOrder.verify(mockApi).saveUser("john@email.com", "encrypted_pass");
+    inOrder.verify(mockApi).sendVerificationEmail("john@email.com");
+    inOrder.verify(mockApi).logRegistration("john@email.com");
+}
+3. API Request/Response Workflow
+java
+@Test
+public void testAPIRequestWorkflow() {
+    service.callExternalAPI(requestData);
+    
+    InOrder inOrder = inOrder(mockApi);
+    inOrder.verify(mockApi).validateRequest(requestData);
+    inOrder.verify(mockApi).buildRequest(requestData);
+    inOrder.verify(mockApi).sendRequest(requestData);
+    inOrder.verify(mockApi).processResponse(requestData);
+    inOrder.verify(mockApi).logAPIInteraction(requestData);
+}
+⚠️ Common Pitfalls and Solutions
+Pitfall 1: Creating InOrder After Method Calls
+java
+// ❌ WRONG - InOrder created after calls
+mockApi.method1();
+mockApi.method2();
+InOrder inOrder = inOrder(mockApi);  // Too late! History still recorded though
+// ✅ CORRECT - Create InOrder before or after is fine, but be consistent
+InOrder inOrder = inOrder(mockApi);
+mockApi.method1();
+mockApi.method2();
+inOrder.verify(mockApi).method1();
+inOrder.verify(mockApi).method2();
+Pitfall 2: Forgetting to Verify All Calls
+java
+// ❌ WRONG - Missing verification for some calls
+mockApi.method1();
+mockApi.method2();
+mockApi.method3();
+InOrder inOrder = inOrder(mockApi);
+inOrder.verify(mockApi).method1();
+inOrder.verify(mockApi).method3();  // This will fail! method2 was called in between
+// ✅ CORRECT - Verify all calls in order
+inOrder.verify(mockApi).method1();
+inOrder.verify(mockApi).method2();
+inOrder.verify(mockApi).method3();
+Pitfall 3: Incorrect Mock Order in InOrder
+java
+// ❌ WRONG - Mocks in wrong order
+mock1.method1();
+mock2.method2();
+mock1.method3();
+InOrder inOrder = inOrder(mock2, mock1);  // Wrong order
+inOrder.verify(mock1).method1();  // This will fail because mock2 is expected first
+// ✅ CORRECT - Include all mocks in correct order
+InOrder inOrder = inOrder(mock1, mock2);
+inOrder.verify(mock1).method1();
+inOrder.verify(mock2).method2();
+inOrder.verify(mock1).method3();
+Pitfall 4: Verifying Stubbed Methods
+java
+// ⚠️ Stubbed methods still count in order
+when(mockApi.validatePayment(anyDouble())).thenReturn(true);
+when(mockApi.processPayment(anyDouble())).thenReturn("success");
+mockApi.validatePayment(100.0);
+mockApi.processPayment(100.0);
+mockApi.confirmPayment(123L);
+InOrder inOrder = inOrder(mockApi);
+// Must verify ALL calls, including stubbed ones
+inOrder.verify(mockApi).validatePayment(100.0);
+inOrder.verify(mockApi).processPayment(100.0);
+inOrder.verify(mockApi).confirmPayment(123L);
+📊 Comparison: Regular Verify vs InOrder
+Aspect
+Regular verify()
+InOrder verify()
+What it checks
+If method was called
+If method was called AND in correct order
+Position tracking
+No
+Yes, tracks sequence
+Multiple mocks
+Verifies each individually
+Verifies order across all mocks
+Error message
+"Wanted but not invoked"
+"Wanted but not invoked" + position info
+Use case
+Simple checks
+Workflow/process testing
+Performance
+Faster
+Slightly slower
+Memory
+Less overhead
+Tracks position state
+🧪 Advanced Examples
+Example 1: Complex Workflow with Branches
+java
+@Test
+public void testComplexWorkflowWithBranches() {
+    // Simulate different execution paths
+    when(mockApi.authenticate(anyString()))
+        .thenReturn(true);  // Admin user
+    
+    service.executeAdminWorkflow("john");
+    
+    InOrder inOrder = inOrder(mockApi);
+    inOrder.verify(mockApi).authenticate("john");
+    inOrder.verify(mockApi).loadUserPermissions("john");
+    inOrder.verify(mockApi).checkAdminAccess("john");
+    inOrder.verify(mockApi).executeAdminTask();
+    inOrder.verify(mockApi).logAction("john", "ADMIN_TASK");
+}
+Example 2: Error Recovery Workflow
+java
+@Test
+public void testErrorRecoveryWorkflow() {
+    // Stub to fail then succeed
+    when(mockApi.sendRequest(anyString()))
+        .thenThrow(new RuntimeException("Network error"))
+        .thenReturn("Success");
+    
+    service.sendWithRetry("DATA", 3);
+    
+    InOrder inOrder = inOrder(mockApi);
+    inOrder.verify(mockApi).sendRequest("DATA");  // Attempt 1 - fails
+    inOrder.verify(mockApi).logRetry(1);
+    inOrder.verify(mockApi).sendRequest("DATA");  // Attempt 2 - succeeds
+    inOrder.verify(mockApi).logSuccess();
+}
+Example 3: Multi-Service Workflow
+java
+@Test
+public void testMultiServiceWorkflow() {
+    ExternalApi api1 = mock(ExternalApi.class);
+    ExternalApi api2 = mock(ExternalApi.class);
+    MyService service = new MyService(api1, api2);
+    
+    service.processMultiStepWorkflow();
+    
+    InOrder inOrder = inOrder(api1, api2);
+    inOrder.verify(api1).step1();
+    inOrder.verify(api2).step2();
+    inOrder.verify(api1).step3();
+    inOrder.verify(api2).step4();
+}
+🎓 Key Takeaways
+InOrder verifies methods are called in the correct sequence
+Create InOrder with inOrder(mock1, mock2, ...)
+Verify by calling inOrder.verify(mock).method()
+Position tracking ensures strict ordering
+Multiple mocks can be tracked together
+Combine with times() for repeated operations
+Error handling should be verified in order
+Stubs count in order verification
+Create new InOrder for each test scenario
+Clear error messages help debug order issues
+🚀 Quick Reference Card
+java
+// ============================================
+// QUICK REFERENCE - ORDER VERIFICATION
+// ============================================
+// 1. BASIC ORDER VERIFICATION
+InOrder inOrder = inOrder(mockApi);
+inOrder.verify(mockApi).first();
+inOrder.verify(mockApi).second();
+inOrder.verify(mockApi).third();
+// 2. MULTIPLE MOCKS
+InOrder inOrder = inOrder(mock1, mock2);
+inOrder.verify(mock1).method1();
+inOrder.verify(mock2).method2();
+// 3. WITH CALL COUNTS
+inOrder.verify(mockApi, times(2)).method();
+// 4. WITH ARGUMENTS
+inOrder.verify(mockApi).method(eq("arg1"), anyString());
+// 5. WITH TIMEOUT
+inOrder.verify(mockApi, timeout(1000)).method();
+// 6. WITH NEVER
+inOrder.verify(mockApi, never()).rollback();
+// 7. VERIFY NO MORE INTERACTIONS
+verifyNoMoreInteractions(mockApi);
+// 8. COMPLETE EXAMPLE
+@Test
+public void completeExample() {
+    // Execute
+    service.processWorkflow();
+    
+    // Verify order
+    InOrder inOrder = inOrder(mockApi);
+    inOrder.verify(mockApi).begin();
+    inOrder.verify(mockApi, times(2)).process();
+    inOrder.verify(mockApi).commit();
+    inOrder.verify(mockApi, never()).rollback();
+    verifyNoMoreInteractions(mockApi);
+}
+🎯 Test Your Understanding
+Try these practice exercises:
+Write a test for a workflow that creates, updates, and deletes a user
+Test a retry mechanism that attempts 3 times before failing
+Verify error handling when a transaction fails and rolls back
+Test a multi-step form submission with validation, saving, and confirmation
+Exercise 7: Handling Void Methods with Exceptions
+Scenario:
+You need to test a void method that throws an exception.
+Steps:
+Create a mock object.
+Stub the void method to throw an exception.
+Verify the interaction.
+Step 1: Create a New Java Project
+Open Eclipse. 
+Click File → New → Java Project. 
+Project Name: MockitoDemo 
+Click Finish. 
+Step 2: Add JUnit 5 and Mockito Libraries
+If Using Maven
+Add these dependencies to pom.xml:
+<dependencies>    <dependency>        <groupId>org.junit.jupiter</groupId>        <artifactId>junit-jupiter</artifactId>        <version>5.10.2</version>        <scope>test</scope>    </dependency>    <dependency>        <groupId>org.mockito</groupId>        <artifactId>mockito-core</artifactId>        <version>5.11.0</version>        <scope>test</scope>    </dependency></dependencies>
+Step 3: Create the Main Class
+Right-click src/main/java → New → Class
+Class Name:
+NotificationService
+NotificationService.java
+public class NotificationService {    public void sendNotification() {        System.out.println("Notification Sent");    }}
+Save the file.
+Step 4: Create JUnit Test Class
+Right-click src/test/java
+New → JUnit Test Case
+Class Name:
+NotificationServiceTest
+Select JUnit 5.
+Click Finish.
+Step 5: Write the Test Code
+Replace all generated code with:
+NotificationServiceTest.java
+import static org.junit.jupiter.api.Assertions.assertThrows;import static org.mockito.Mockito.doThrow;import static org.mockito.Mockito.mock;import static org.mockito.Mockito.verify;import org.junit.jupiter.api.Test;public class NotificationServiceTest {    @Test    void testSendNotificationThrowsException() {        // Step 1: Create Mock Object        NotificationService service =                mock(NotificationService.class);        // Step 2: Stub Void Method        doThrow(new RuntimeException("Notification Failed"))                .when(service)                .sendNotification();        // Step 3: Check Exception        assertThrows(                RuntimeException.class,                () -> service.sendNotification()        );        // Step 4: Verify Interaction        verify(service).sendNotification();    }}
+Step 6: Understand the Code
+Create Mock Object
+NotificationService service =        mock(NotificationService.class);
+Creates a fake object.
+Stub Void Method
+doThrow(new RuntimeException("Notification Failed"))        .when(service)        .sendNotification();
+Whenever sendNotification() is called:
+RuntimeException
+will be thrown.
+Verify Exception
+assertThrows(        RuntimeException.class,        () -> service.sendNotification());
+Checks whether the exception occurs.
+Verify Method Call
+verify(service).sendNotification();
+Checks that the method was actually called.
+Step 7: Run the Test
+Right-click NotificationServiceTest.java 
+Click: 
+Run As → JUnit Test
+Expected Result
+JUnit Window:
+testSendNotificationThrowsException() ✓
+Summary:
+Tests run: 1Failures: 0Errors: 0
+Green bar appears.
+Complete Program
+NotificationService.java
+public class NotificationService {    public void sendNotification() {        System.out.println("Notification Sent");    }}
+NotificationServiceTest.java
+import static org.junit.jupiter.api.Assertions.assertThrows;import static org.mockito.Mockito.doThrow;import static org.mockito.Mockito.mock;import static org.mockito.Mockito.verify;import org.junit.jupiter.api.Test;public class NotificationServiceTest {    @Test    void testSendNotificationThrowsException() {        NotificationService service =                mock(NotificationService.class);        doThrow(new RuntimeException("Notification Failed"))                .when(service)                .sendNotification();        assertThrows(                RuntimeException.class,                () -> service.sendNotification()        );        verify(service).sendNotification();    }}
+Viva Questions
+Q1. Why use doThrow() instead of when()?
+Because sendNotification() is a void method and does not return a value.
+Q2. What does verify() do?
+It checks whether a method was called on the mock object.
+Q3. What does assertThrows() do?
+It verifies that the expected exception is thrown during execution.
