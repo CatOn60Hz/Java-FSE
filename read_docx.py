@@ -25,4 +25,5 @@ def read_docx(file_path):
         return str(e)
 
 if __name__ == '__main__':
+    sys.stdout.reconfigure(encoding='utf-8')
     print(read_docx(sys.argv[1]))
