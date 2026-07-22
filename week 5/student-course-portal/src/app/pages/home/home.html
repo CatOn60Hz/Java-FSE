@@ -1,0 +1,21 @@
+<div>
+  <h1>{{ portalName }}</h1>
+  <p>Manage your academic progress and explore new courses.</p>
+  <div class="stats">
+    <span>Courses Available: {{ availableCoursesCount }}</span>
+    <span>Enrolled: 3</span>
+    <span>GPA: 3.8</span>
+  </div>
+  
+  <br/>
+  <button [disabled]='!isPortalActive' (click)='onEnrollClick()'>Enroll Now</button>
+  <p>{{ message }}</p>
+
+  <br/>
+  <input [(ngModel)]='searchTerm' placeholder="Search...">
+  <p>Searching for: {{ searchTerm }}</p>
+
+  <hr style="margin: 2rem 0">
+  <button (click)="refreshCount()">Refresh Home Count</button>
+  <app-course-summary-widget></app-course-summary-widget>
+</div>

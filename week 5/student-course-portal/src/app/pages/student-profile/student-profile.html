@@ -1,0 +1,18 @@
+<div class="profile-container" style="max-width: 800px; margin: 2rem auto; padding: 2rem; background: var(--surface-color); border-radius: var(--radius-lg); box-shadow: var(--shadow-md);">
+  <h2>Student Profile</h2>
+  
+  <h3 style="margin-top: 2rem; margin-bottom: 1rem;">My Enrolled Courses</h3>
+  <ul *ngIf="enrolledCourses.length > 0; else noCourses" style="list-style: none; padding: 0;">
+    <li *ngFor="let course of enrolledCourses" style="padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: 0.5rem;">
+      <strong>{{ course.name }}</strong> ({{ course.code }}) - {{ course.credits }} Credits
+    </li>
+  </ul>
+  
+  <ng-template #noCourses>
+    <p>You have not enrolled in any courses yet. Go to <a routerLink="/courses">Courses</a> to find one!</p>
+  </ng-template>
+
+  <hr style="margin: 2rem 0;">
+  
+  <app-notification></app-notification>
+</div>

@@ -1,0 +1,18 @@
+<div class="course-detail-container" *ngIf="course; else notFound" style="background: var(--surface-color); padding: 2rem; border-radius: var(--radius-lg); box-shadow: var(--shadow-md);">
+  <h2 style="margin-bottom: 1rem; color: var(--primary-color);">{{ course.name }}</h2>
+  <div style="font-size: 1.1rem; line-height: 1.6;">
+    <p><strong>Course Code:</strong> {{ course.code }}</p>
+    <p><strong>Credits:</strong> {{ course.credits }}</p>
+    <p><strong>Grade Status:</strong> <span style="text-transform: capitalize;">{{ course.gradeStatus }}</span></p>
+  </div>
+  <br>
+  <a routerLink="/courses" style="display: inline-block; padding: 0.5rem 1rem; background: var(--border-color); color: var(--text-primary); text-decoration: none; border-radius: var(--radius-md);">Back to Courses</a>
+</div>
+
+<ng-template #notFound>
+  <div style="text-align: center; padding: 3rem;">
+    <h2>Course Not Found</h2>
+    <p>The course ID you provided does not exist.</p>
+    <a routerLink="/courses">Go back to courses list</a>
+  </div>
+</ng-template>

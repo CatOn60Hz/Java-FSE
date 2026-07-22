@@ -1,0 +1,32 @@
+<div class="card" [ngClass]="cardClasses" [ngStyle]="{'border-left-color': borderStyle, 'border-left-width': '5px', 'border-left-style': 'solid'}">
+  
+  <div class="card-header">
+    <div>
+      <h3>{{ course.name }}</h3>
+      <span class="course-code">{{ course.code }}</span>
+    </div>
+    <div [ngSwitch]="course.gradeStatus">
+      <span class="badge passed" *ngSwitchCase="'passed'">Passed</span>
+      <span class="badge failed" *ngSwitchCase="'failed'">Failed</span>
+      <span class="badge pending" *ngSwitchCase="'pending'">Pending</span>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <p>Credits: <strong>{{ course.credits | creditLabel }}</strong></p>
+    <div *ngIf="isExpanded" class="expanded-details">
+      <p>This is a great course to learn {{ course.name }}. Dive deep into the fundamentals and advanced topics.</p>
+    </div>
+  </div>
+
+  <div class="card-actions">
+    <button class="secondary" (click)="isExpanded = !isExpanded; $event.stopPropagation()">
+      {{ isExpanded ? 'Hide Details' : 'Show Details' }}
+    </button>
+    <button class="primary" (click)='toggleEnrollment($event)'>
+      {{ isEnrolled ? 'Unenroll' : 'Enroll Now' }}
+    </button>
+  </div>
+
+</div>
+

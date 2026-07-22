@@ -1,0 +1,37 @@
+<div class="course-list-container">
+  <div class="page-header">
+    <h2>Available Courses</h2>
+    <div style="margin-top: 1rem;">
+      <input type="text" [(ngModel)]="searchTerm" (input)="onSearch()" placeholder="Search courses..." style="padding: 0.5rem; width: 100%; max-width: 300px; border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+    </div>
+  </div>
+
+  <div *ngIf="isLoading$ | async; else coursesLoaded" class="loading-state">
+    <p>Loading courses...</p>
+  </div>
+  
+  <ng-template #coursesLoaded>
+    <div *ngIf="courses$ | async as courses">
+      <div *ngIf="courses.length > 0; else noCourses" class="courses-grid">
+        <app-course-card 
+          *ngFor="let c of courses; let i = index; trackBy: trackByCourseId" 
+          [course]="c"
+          appHighlight="#fef9c3"
+          (click)="viewCourseDetails(c.id)"
+          style="cursor: pointer;"
+          (enrollRequested)="onEnroll($event)">
+        </app-course-card>
+      </div>
+      <ng-template #noCourses>
+        <div class="empty-state">
+          <p>No courses available at the moment.</p>
+        </div>
+      </ng-template>
+    </div>
+  </ng-template>
+  
+  <div *ngIf="selectedCourseId" class="selected-course-banner">
+    <span class="icon">✅</span>
+    <p>You have selected course ID: <strong>{{ selectedCourseId }}</strong></p>
+  </div>
+</div>

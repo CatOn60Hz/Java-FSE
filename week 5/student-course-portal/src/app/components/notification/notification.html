@@ -1,0 +1,8 @@
+<div style="border: 2px dashed var(--primary-color); padding: 1.5rem; border-radius: var(--radius-md); background: #f0fdf4;">
+  <h4>Isolated Notifications Widget</h4>
+  <p style="font-size: 0.9rem; margin-bottom: 1rem;">This widget uses a component-level provider. Its state is not shared globally.</p>
+  <button class="primary small" (click)="triggerNotification()">Trigger Notification</button>
+  <ul style="margin-top: 1rem; padding-left: 1.5rem;">
+    <li *ngFor="let msg of notificationService.getMessages()">{{ msg }}</li>
+  </ul>
+</div>
